@@ -1,7 +1,5 @@
 #pragma once
 
-#include <packets/Packet.h>
-
 class Proxy;
 
 class JavaPacketHandler {

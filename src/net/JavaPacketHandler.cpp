@@ -10,55 +10,56 @@
 std::set<const void*> pinging; // insert() doesn't work if this is declared in header???
 
 void JavaPacketHandler::handle(const void* address, const char payload[], unsigned short size) const {
-    Packet packet(payload);
-    std::cout << "ID: " << +packet.getId() << std::endl;
+    ByteBuffer packet(payload, size);
+    int length = packet.readVarInt();
+    unsigned char id = packet.readByte();
 
-    switch (packet.getId()) {
+    //std::cout << length << ' ' << size << " ID: " << +id << std::endl;
+
+    switch (id) {
         case 0: {
             if (pinging.find(address) == pinging.end()) {
-                HandshakePacket hand(payload);
+                HandshakePacket hand;
 
-                std::cout << hand.getVersion() << std::endl;
-                std::cout << hand.getAddress() << std::endl;
-                std::cout << hand.getPort() << std::endl;
-                std::cout << +hand.getState() << std::endl;
+                hand.read(packet);
+
+                std::cout << hand.getVersion() << '-' << hand.getAddress() << ':' << hand.getPort() << '+' << +hand.getState() << std::endl;
 
                 pinging.insert(address);
-                return;
+                break;
             }
 
-            Packet motd;
+            ByteBuffer motd;
 
             motd.writeByte(0);
             motd.writeString(proxy->getMotdString(), true);
-            motd.setOffset(0);
+            motd.prefixLength();
 
-            Packet fin;
-
-            fin.writeVarInt(motd.getRealSize());
-
-            for (unsigned int i = 0; i < motd.getRealSize(); i++) {
-                fin.writeByte(motd.getBuffer()[i]);
-            }
-
-            proxy->getJeSocket()->send(address, fin);
+            proxy->getJeSocket()->send(address, motd);
             break;
         }
 
         case 1: {
+            packet.setOffset(packet.getSize());
             proxy->getJeSocket()->send(address, payload, size);
             break;
         }
 
         case 3: {
-            CompressionPacket comp(payload);
+            CompressionPacket comp;
+
+            comp.read(packet);
 
             std::cout << comp.getThreshold() << std::endl;
             break;
         }
 
         default:
-            std::cout << "UNSUPPORTED PACKET " << +packet.getId() << std::endl;
+            std::cout << "UNSUPPORTED PACKET " << +id << std::endl;
+    }
+
+    if (packet.isReadable()) {
+        handle(address, payload + packet.getOffset(), size - packet.getOffset());
     }
 }
 

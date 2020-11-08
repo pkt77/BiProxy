@@ -8,7 +8,7 @@ WinSockTCP::WinSockTCP(Proxy* proxy, unsigned short port) : WinSock(proxy) {
 
     u_long nonBlock = 1;
 
-    if (ioctlsocket(server, FIONBIO, &nonBlock) == SOCKET_ERROR) {
+    if (ioctlsocket(server, FIONBIO, &nonBlock) != NO_ERROR) {
         std::cout << "TCP socket failed nonblocking" << std::endl;
     }
 }
@@ -21,6 +21,8 @@ void WinSockTCP::start() {
     //char error_code;
     //int error_code_size = sizeof(error_code);
     char buffer[1024] = {0};
+
+    TIMEVAL timeout{0, 1000};
 
     while (proxy->isRunning()) {
         newConnection = accept(server, &clientaddr, &addrlen);
@@ -40,7 +42,12 @@ void WinSockTCP::start() {
             FD_ZERO(&readable);
             FD_SET(connection, &readable);
 
-            int nfd = select(0, &readable, nullptr, nullptr, nullptr);
+            int result = select(NULL, &readable, nullptr, nullptr, nullptr);
+
+            if (result == SOCKET_ERROR) {
+                std::cout << "TCP Select error!" << std::endl;
+                continue;
+            }
 
             if (!FD_ISSET(connection, &readable)) {
                 continue;

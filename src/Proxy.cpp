@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 #include "Proxy.h"
 
 #ifdef _WIN32
@@ -14,6 +15,7 @@ Proxy::Proxy(std::string host, unsigned short port) : host(host), javaPacketHand
 
     while (getline(file, line)) {
         motdString += line;
+        std::cout << line << std::endl;
     }
     file.close();
 

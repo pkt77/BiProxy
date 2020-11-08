@@ -14,6 +14,6 @@ if (UNIX)
     #set(SOCKET_HANDLER src/Net/UniSock.cpp)
 endif (UNIX)
 
-file(GLOB SOURCE_FILES src/* src/net/* src/packets/*)
+file(GLOB SOURCE_FILES src/* src/net/* src/packets/* src/utils/*)
 
 add_executable(BiProxy ${SOURCE_FILES} ${SOCKET_HANDLER})

@@ -7,8 +7,12 @@ private:
     int threshold;
 
 public:
-    CompressionPacket(const char buffer[]) : Packet(buffer) {
-        threshold = readVarInt();
+    void read(ByteBuffer& buffer) override {
+        threshold = buffer.readVarInt();
+    }
+
+    void write(ByteBuffer& buffer) override {
+
     }
 
     int getThreshold() const {

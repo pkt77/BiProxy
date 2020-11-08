@@ -1,11 +1,13 @@
 #pragma once
 
+#include <utils/ByteBuffer.h>
+
 class AbstractSocket {
 public:
     virtual void start() = 0;
 
-    virtual void send(const void* address, Packet& packet) {
-        send(address, packet.getBuffer(), packet.getRealSize());
+    void send(const void* address, ByteBuffer& packet) {
+        send(address, packet.getBuffer(), packet.getSize());
     };
 
     virtual void send(const void* address, const char payload[], unsigned short size) = 0;
