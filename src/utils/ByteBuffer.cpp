@@ -10,10 +10,6 @@ void ByteBuffer::ensureWritable(unsigned short bytes) {
 
         std::memcpy(newBuff, buffer, bufferSize);
 
-        for (unsigned int i = bufferSize; i < bufferSize + bytes + BUFFER_SIZE; i++) {
-            newBuff[i] = '\0';
-        }
-
         if (buffer) {
             delete[] buffer;
         }
@@ -48,7 +44,6 @@ void ByteBuffer::prefixLength() {
     offset = 0;
     writeVarInt(size);
     offset = 0;
-    std::cout << readVarInt() << "  Size  " << size << std::endl;
 }
 
 void ByteBuffer::writeByte(char value) {
@@ -72,10 +67,14 @@ unsigned short ByteBuffer::readUnsignedShort() {
     return (readByte() << 8) + readByte();
 }
 
-void ByteBuffer::writeShort(short value) {
+void ByteBuffer::writeUnsignedShort(unsigned short value) {
     ensureWritable(2);
-    writeByte((unsigned short) value >> 8);
-    writeByte((unsigned short) value);
+    writeByte(value >> 8);
+    writeByte(value);
+}
+
+void ByteBuffer::writeShort(short value) {
+    writeUnsignedShort(value);
 }
 
 int ByteBuffer::readVarInt() {
@@ -99,7 +98,6 @@ int ByteBuffer::readVarInt() {
 
 void ByteBuffer::writeVarInt(int value) {
     do {
-        // std::cout << value << std::endl;
         char temp = (char) (value & 0b01111111);
 
         value = (unsigned int) value >> 7;
@@ -107,9 +105,27 @@ void ByteBuffer::writeVarInt(int value) {
         if (value != 0) {
             temp |= 0b10000000;
         }
-        // std::cout << +temp << std::endl;
         writeByte(temp);
     } while (value != 0);
+}
+
+unsigned int ByteBuffer::readInt24bit() {
+    return ((readByte() & 255) << 16) +
+           ((readByte() & 255) << 8) +
+           (readByte() & 255);
+}
+
+void ByteBuffer::writeInt24bit(unsigned int value) {
+    writeByte(value >> 16);
+    writeByte(value >> 8);
+    writeByte(value);
+}
+
+int ByteBuffer::readInt() {
+    return ((readByte() & 255) << 24) +
+           ((readByte() & 255) << 16) +
+           ((readByte() & 255) << 8) +
+           (readByte() & 255);
 }
 
 long long ByteBuffer::readLong() {

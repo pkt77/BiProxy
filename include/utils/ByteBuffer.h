@@ -23,13 +23,37 @@ public:
 
     void prefixLength();
 
+    static unsigned char flip(unsigned char byte) {
+        return ~byte & 0xFF;
+    }
+
     char readByte() {
+        return buffer[offset++];
+    }
+
+    unsigned char readUnsignedByte() {
         return buffer[offset++];
     }
 
     void writeByte(char value);
 
+    void writeUnsignedByte(unsigned char value) {
+        writeByte(value);
+    }
+
     void writeBytes(const char* bytes, unsigned short length);
+
+    void writeBytes(const unsigned char* bytes, unsigned short length) {
+        writeBytes((const char*) bytes, length);
+    };
+
+    bool readBoolean() {
+        return buffer[offset++];
+    }
+
+    void writeBoolean(bool value) {
+        writeByte(value);
+    }
 
     short readShort();
 
@@ -43,6 +67,12 @@ public:
 
     void writeVarInt(int value);
 
+    unsigned int readInt24bit();
+
+    void writeInt24bit(unsigned int value);
+
+    int readInt();
+
     long long readLong();
 
     void writeLong(long long value);
@@ -55,8 +85,12 @@ public:
 
     void release();
 
+    int readableBytes() const {
+        return (int) size - (int) offset;
+    }
+
     bool isReadable() const {
-        return (int) size - (int) offset > 0;
+        return readableBytes() > 0;
     }
 
     char* getBuffer() const {
