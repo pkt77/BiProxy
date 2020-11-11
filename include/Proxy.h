@@ -23,6 +23,7 @@ private:
     const JavaPacketHandler javaPacketHandler;
     const RakNetPacketHandler rakNetPacketHandler;
 
+    std::string iconBase64;
     std::string motdString;
 
 public:
