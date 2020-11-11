@@ -16,13 +16,10 @@ void WinSockUDP::start() {
             continue;
         }
 
-        char* payload = new char[bytes];
+        ByteBuffer* packet = ByteBuffer::allocateBuffer(bytes, true);
 
-        memcpy(payload, buffer, bytes);
-
-        proxy->getRakNetPacketHandler().handle(&SenderAddr, payload, bytes);
-
-        delete[] payload;
+        memcpy(packet->getBuffer(), buffer, bytes);
+        proxy->getRakNetPacketHandler().handle(&SenderAddr, packet);
     }
 }
 

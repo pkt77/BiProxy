@@ -10,14 +10,20 @@ private:
 
     unsigned int bufferSize;
     unsigned int offset = 0;
-    unsigned short size;
+    unsigned int size;
 
     bool released = false;
 
 public:
-    ByteBuffer();
+    static ByteBuffer* allocateBuffer(unsigned int size, bool copy = false);
 
-    ByteBuffer(const char buffer[], unsigned short size) : buffer(const_cast<char*>(buffer)), size(size), bufferSize(size) {}
+    ByteBuffer(unsigned int size) : size(size), bufferSize(size), buffer(new char[size]) {}
+
+    ByteBuffer(const char buffer[], unsigned int size);
+
+    ~ByteBuffer() {
+        delete[] buffer;
+    }
 
     void ensureWritable(unsigned short bytes);
 
@@ -84,6 +90,10 @@ public:
     void writeString(const char* value, bool varInt);
 
     void release();
+
+    void use() {
+        released = false;
+    }
 
     int readableBytes() const {
         return (int) size - (int) offset;

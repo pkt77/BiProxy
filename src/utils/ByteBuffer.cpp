@@ -1,8 +1,43 @@
-
-#include <iostream>
 #include "utils/ByteBuffer.h"
 
-ByteBuffer::ByteBuffer() : size(0), bufferSize(BUFFER_SIZE), buffer(new char[BUFFER_SIZE]) {}
+#include <iostream>
+#include <list>
+#include <mutex>
+
+std::list<ByteBuffer*> POOL;
+std::mutex POOL_LOCK;
+
+ByteBuffer* ByteBuffer::allocateBuffer(unsigned int size, bool copy) {
+    ByteBuffer* buff = nullptr;
+
+    POOL_LOCK.lock();
+
+    for (auto temp : POOL) {
+        if (temp != nullptr && temp->released && temp->bufferSize >= size) {
+            buff = temp;
+            break;
+        }
+    }
+
+    if (buff == nullptr) {
+        buff = new ByteBuffer(size);
+        POOL.push_back(buff);
+    } else {
+        buff->use();
+    }
+
+    POOL_LOCK.unlock();
+
+    if (copy) {
+        buff->size = size;
+    }
+
+    return buff;
+}
+
+ByteBuffer::ByteBuffer(const char buffer[], unsigned int size) : buffer(new char[size]), size(size), bufferSize(size) {
+    memcpy(this->buffer, buffer, size);
+}
 
 void ByteBuffer::ensureWritable(unsigned short bytes) {
     if (size + bytes >= bufferSize) {
@@ -10,10 +45,7 @@ void ByteBuffer::ensureWritable(unsigned short bytes) {
 
         std::memcpy(newBuff, buffer, bufferSize);
 
-        if (buffer) {
-            delete[] buffer;
-        }
-
+        delete[] buffer;
         buffer = newBuff;
 
         bufferSize += BUFFER_SIZE + bytes;
@@ -185,6 +217,10 @@ void ByteBuffer::writeString(const char* value, bool varInt) {
     if (varInt) {
         ensureWritable(5 + length);
         writeVarInt(length);
+
+        /*if (length > 32767) {
+            std::cout << "String is too large!" << std::endl;
+        }*/
     } else {
         ensureWritable(2 + length);
         writeShort(length);
@@ -196,8 +232,7 @@ void ByteBuffer::writeString(const char* value, bool varInt) {
 }
 
 void ByteBuffer::release() {
-    //bufferSize = 0;
     offset = 0;
     size = 0;
-    // delete[] buffer;
+    released = true;
 }

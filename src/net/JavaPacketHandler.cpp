@@ -8,42 +8,44 @@
 #include <set>
 
 #define HANDSHAKE 0
-#define STATUS_REQUEST 0
+#define STATUS 0
 #define PING 1
 
 std::set<const void*> pinging; // insert() doesn't work if this is declared in header???
 std::set<const void*> joining;
 
-void JavaPacketHandler::handle(const void* address, const char payload[], unsigned short size) const {
-    ByteBuffer packet(payload, size);
-    int length = packet.readVarInt();
-    unsigned char id = packet.readByte();
+void JavaPacketHandler::handle(const void* address, ByteBuffer* packet) const {
+    int length = packet->readVarInt();
+    unsigned int offset = packet->getOffset();
+    unsigned char id = packet->readByte();
 
-    //std::cout << length << ' ' << size << " ID: " << +id << std::endl;
+    //std::cout << length << ' ' << packet->readableBytes() << " ID: " << +id << std::endl;
 
     switch (id) {
-        case 0: {
+        case HANDSHAKE: {
             if (joining.find(address) != joining.end()) {
-                std::cout << packet.readString() << std::endl;
+                std::cout << packet->readString() << std::endl;
 
-                ByteBuffer encr;
+                ByteBuffer* encr = ByteBuffer::allocateBuffer(100);
 
-                encr.writeByte(0);
-                encr.writeString(R"({"text":"Banned", "color":"red"})", true);
-                encr.prefixLength();
+                encr->writeByte(0);
+                encr->writeString(R"({"text":"Banned", "color":"red"})", true);
+                encr->prefixLength();
 
                 proxy->getJeSocket()->send(address, encr);
+                encr->release();
                 break;
             }
 
             if (pinging.find(address) != pinging.end()) {
-                ByteBuffer motd;
+                ByteBuffer* motd = ByteBuffer::allocateBuffer(proxy->getMotdString().length() + 5);
 
-                motd.writeByte(0);
-                motd.writeString(proxy->getMotdString(), true);
-                motd.prefixLength();
+                motd->writeByte(STATUS);
+                motd->writeString(proxy->getMotdString(), true);
+                motd->prefixLength();
 
                 proxy->getJeSocket()->send(address, motd);
+                motd->release();
                 break;
             }
 
@@ -61,9 +63,16 @@ void JavaPacketHandler::handle(const void* address, const char payload[], unsign
             break;
         }
 
-        case 1: {
-            packet.setOffset(packet.getSize());
-            proxy->getJeSocket()->send(address, payload, size);
+        case PING: {
+            ByteBuffer* pong = ByteBuffer::allocateBuffer(10);
+            long long time = packet->readLong();
+
+            pong->writeVarInt(9);
+            pong->writeByte(PING);
+            pong->writeLong(time);
+
+            proxy->getJeSocket()->send(address, pong);
+            pong->release();
             break;
         }
 
@@ -80,8 +89,12 @@ void JavaPacketHandler::handle(const void* address, const char payload[], unsign
             std::cout << "UNSUPPORTED PACKET " << +id << std::endl;
     }
 
-    if (packet.isReadable()) {
-        handle(address, payload + packet.getOffset(), size - packet.getOffset());
+    packet->setOffset(offset + length);
+
+    if (packet->isReadable()) {
+        handle(address, packet);
+    } else {
+        packet->release();
     }
 }
 

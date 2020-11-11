@@ -64,13 +64,10 @@ void WinSockTCP::start() {
 
             iter++;
 
-            char* payload = new char[bytes];
+            ByteBuffer* packet = ByteBuffer::allocateBuffer(bytes, true);
 
-            memcpy(payload, buffer, bytes);
-
-            proxy->getJavaPacketHandler().handle(&connection, payload, bytes);
-
-            delete[] payload;
+            memcpy(packet->getBuffer(), buffer, bytes);
+            proxy->getJavaPacketHandler().handle(&connection, packet);
         }
     }
 }

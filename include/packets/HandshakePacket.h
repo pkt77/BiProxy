@@ -13,14 +13,14 @@ private:
     unsigned char state;
 
 public:
-    void read(ByteBuffer& buffer) override {
-        version = buffer.readVarInt();
-        address = buffer.readString();
-        port = buffer.readUnsignedShort();
-        state = buffer.readVarInt();
+    void read(ByteBuffer* buffer) override {
+        version = buffer->readVarInt();
+        address = buffer->readString();
+        port = buffer->readUnsignedShort();
+        state = buffer->readVarInt();
     }
 
-    void write(ByteBuffer& buffer) override {
+    void write(ByteBuffer* buffer) override {
     }
 
     unsigned int getVersion() const {

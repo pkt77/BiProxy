@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utils/ByteBuffer.h>
+
 class Proxy;
 
 class JavaPacketHandler {
@@ -9,7 +11,7 @@ private:
 public:
     JavaPacketHandler(Proxy* proxy) : proxy(proxy) {}
 
-    void handle(const void* address, const char payload[], unsigned short size) const;
+    void handle(const void* address, ByteBuffer* packet) const;
 
     void disconnect(const void* address) const;
 };

@@ -1,8 +1,6 @@
 #include "net/RakNetPacketHandler.h"
 
 #include <iostream>
-
-#include <packets/Packet.h>
 #include "Proxy.h"
 
 #define RAKNET_PROTOCOL_VERSION 10
@@ -73,75 +71,80 @@ bool isSequenced(unsigned char id) {
     return id == UNRELIABLE_SEQUENCED || id == RELIABLE_SEQUENCED;
 }
 
-void RakNetPacketHandler::handle(const void* address, const char* payload, unsigned short size) const {
-    ByteBuffer packet(payload, size);
-    unsigned char id = packet.readUnsignedByte();
+void RakNetPacketHandler::handle(const void* address, ByteBuffer* packet) const {
+    unsigned char id = packet->readUnsignedByte();
 
     //std::cout << size << " ID: " << +payload[0] << std::endl;
     switch (id) {
         case CONNECTED_PING: {
-            long long ping = packet.readLong();
-            ByteBuffer pong;
+            long long ping = packet->readLong();
+            ByteBuffer* pong = ByteBuffer::allocateBuffer(10);
 
-            pong.writeByte(CONNECTED_PONG);
-            pong.writeLong(ping);
-            pong.writeLong(currentTimeMillis());
+            pong->writeByte(CONNECTED_PONG);
+            pong->writeLong(ping);
+            pong->writeLong(currentTimeMillis());
+
+            proxy->getBeSocket()->send(address, pong);
+            pong->release();
+            break;
         }
 
         case UNCONNECTED_PING:
         case UNCONNECTED_PING_OPEN_CONNECTIONS: {
-            if (size < 33) {
+            if (packet->getSize() < 33) {
                 break;
             }
-
-            long long time = packet.readLong();
-            ByteBuffer pong;
-
-            pong.writeByte(UNCONNECTED_PONG);
-
-            pong.writeLong(time);
-            pong.writeLong(GUID);
-            pong.writeBytes(MAGIC, 16);
 
             std::string motd("MCPE;ProxyServer;408;1.16.20;0;10;");
             motd += std::to_string(GUID);
             motd += ";BedrockTest;Survival;1;19132;19133;";
 
-            pong.writeString(motd, false);
+            long long time = packet->readLong();
+            ByteBuffer* pong = ByteBuffer::allocateBuffer(motd.length() + 35);
+
+            pong->writeByte(UNCONNECTED_PONG);
+
+            pong->writeLong(time);
+            pong->writeLong(GUID);
+            pong->writeBytes(MAGIC, 16);
+            pong->writeString(motd, false);
+
             proxy->getBeSocket()->send(address, pong);
+            pong->release();
             break;
         }
 
         case OPEN_CONNECTION_REQUEST_1: {
-            packet.setOffset(17);
+            packet->setOffset(17);
 
-            if (packet.readByte() != RAKNET_PROTOCOL_VERSION) {
-                ByteBuffer inc; //TODO cache
+            if (packet->readByte() != RAKNET_PROTOCOL_VERSION) {
+                ByteBuffer* inc = ByteBuffer::allocateBuffer(25); //TODO cache
 
-                inc.writeByte(INCOMPATIBLE_PROTOCOL_VERSION);
-                inc.writeByte(RAKNET_PROTOCOL_VERSION);
-                inc.writeBytes(MAGIC, 16);
-                inc.writeLong(GUID);
+                inc->writeByte(INCOMPATIBLE_PROTOCOL_VERSION);
+                inc->writeByte(RAKNET_PROTOCOL_VERSION);
+                inc->writeBytes(MAGIC, 16);
+                inc->writeLong(GUID);
 
                 proxy->getBeSocket()->send(address, inc);
                 break;
             }
 
-            short mtu = packet.readableBytes() + 46;
-            ByteBuffer reply;
+            unsigned short mtu = packet->readableBytes() + 46;
+            ByteBuffer* reply = ByteBuffer::allocateBuffer(26);
 
-            reply.writeByte(OPEN_CONNECTION_REPLY_1);
-            reply.writeBytes(MAGIC, 16);
-            reply.writeLong(GUID);
-            reply.writeBoolean(false);
-            reply.writeShort(mtu);
+            reply->writeByte(OPEN_CONNECTION_REPLY_1);
+            reply->writeBytes(MAGIC, 16);
+            reply->writeLong(GUID);
+            reply->writeBoolean(false);
+            reply->writeShort(mtu);
             std::cout << "MTU: " << mtu << std::endl;
             proxy->getBeSocket()->send(address, reply);
+            reply->release();
             break;
         }
 
         case OPEN_CONNECTION_REQUEST_2: {
-            packet.setOffset(17);
+            packet->setOffset(17);
 
             short mtu;
 /*
@@ -149,25 +152,28 @@ void RakNetPacketHandler::handle(const void* address, const char* payload, unsig
                 std::cout << std::hex << +packet.getBuffer()[i] << ',';
             }*/
 
-            std::cout << "IPv" << +packet.readUnsignedByte() << ' ' << +packet.flip(packet.readUnsignedByte()) << '.' << +packet.flip(packet.readUnsignedByte()) << '.'
-                      << +packet.flip(packet.readUnsignedByte()) << '.' << +packet.flip(packet.readUnsignedByte()) << ':' << packet.readUnsignedShort() << ' '
-                      << (mtu = packet.readShort()) << ' ' << packet.readLong() << std::endl;
+            std::cout << "IPv" << +packet->readUnsignedByte() << ' ' << +ByteBuffer::flip(packet->readUnsignedByte()) << '.'
+                      << +ByteBuffer::flip(packet->readUnsignedByte()) << '.'
+                      << +ByteBuffer::flip(packet->readUnsignedByte()) << '.' << +ByteBuffer::flip(packet->readUnsignedByte()) << ':' << packet->readUnsignedShort()
+                      << ' '
+                      << (mtu = packet->readShort()) << ' ' << packet->readLong() << std::endl;
 
-            ByteBuffer reply;
+            ByteBuffer* reply = ByteBuffer::allocateBuffer(20);
 
-            reply.writeByte(OPEN_CONNECTION_REPLY_2);
-            reply.writeBytes(MAGIC, 16);
-            reply.writeLong(GUID);
-            reply.writeByte(4);
-            reply.writeUnsignedByte(reply.flip(192));
-            reply.writeUnsignedByte(reply.flip(168));
-            reply.writeUnsignedByte(reply.flip(1));
-            reply.writeUnsignedByte(reply.flip(66));
-            reply.writeUnsignedShort(19132);
-            reply.writeShort(mtu);
-            reply.writeBoolean(false);
+            reply->writeByte(OPEN_CONNECTION_REPLY_2);
+            reply->writeBytes(MAGIC, 16);
+            reply->writeLong(GUID);
+            reply->writeByte(4);
+            reply->writeUnsignedByte(ByteBuffer::flip(192));
+            reply->writeUnsignedByte(ByteBuffer::flip(168));
+            reply->writeUnsignedByte(ByteBuffer::flip(1));
+            reply->writeUnsignedByte(ByteBuffer::flip(66));
+            reply->writeUnsignedShort(19132);
+            reply->writeShort(mtu);
+            reply->writeBoolean(false);
 
             proxy->getBeSocket()->send(address, reply);
+            reply->release();
             break;
         }
 
@@ -185,63 +191,67 @@ void RakNetPacketHandler::handle(const void* address, const char* payload, unsig
         case FRAME_SET12:
         case FRAME_SET13:
         case FRAME_SET14: {
-            while (packet.isReadable()) {
-                unsigned int sequence = packet.readInt24bit();
+            while (packet->isReadable()) {
+                unsigned int sequence = packet->readInt24bit();
 
-                char flags = packet.readByte();
-                unsigned short bits = packet.readUnsignedShort();
+                char flags = packet->readByte();
+                unsigned short bits = packet->readUnsignedShort();
                 unsigned char reliability = (flags & 0b11100000) >> 5;
-                unsigned int index = packet.readInt24bit();
+                unsigned int index = packet->readInt24bit();
 
                 //std::cout << +reliability << ' ' << bits << ' ' << index << std::endl;
 
                 if (isOrdered(reliability)) {
-                    std::cout << "Channel " << +packet.readByte() << std::endl;
+                    std::cout << "Channel " << +packet->readByte() << std::endl;
                 }
 
                 if ((flags & 0b00010000) != 0) { // 4th bit is 1 if fragmented
-                    int fSize = packet.readInt();
-                    short fId = packet.readShort();
-                    int fIndex = packet.readInt();
+                    int fSize = packet->readInt();
+                    short fId = packet->readShort();
+                    int fIndex = packet->readInt();
 
                     std::cout << "Fragment " << fSize << ' ' << fId << ' ' << fIndex << std::endl;
                 }
 
-                handle(address, payload + packet.getOffset(), bits / 8);
-                packet.setOffset(packet.getOffset() + (bits / 8));
+                handle(address, packet);
+                packet->setOffset(packet->getOffset() + (bits / 8));
             }
             break;
         }
 
         case CONNECTION_REQUEST: {
-            long long guid = packet.readLong();
-            long long time = packet.readLong();
-            ByteBuffer reply;
-            ByteBuffer encap;
+            long long guid = packet->readLong();
+            long long time = packet->readLong();
+            ByteBuffer* reply = ByteBuffer::allocateBuffer(100);
+            ByteBuffer* encap = ByteBuffer::allocateBuffer(100);
 
-            reply.writeByte(CONNECTION_REQUEST_ACCEPTED);
-            reply.writeUnsignedByte(4);
-            reply.writeUnsignedByte(reply.flip(192));
-            reply.writeUnsignedByte(reply.flip(168));
-            reply.writeUnsignedByte(reply.flip(1));
-            reply.writeUnsignedByte(reply.flip(66));
-            reply.writeUnsignedShort(19132);
-            reply.writeShort(0); //Unknown
-            reply.writeBytes(ADDRESSES, 70);
-            reply.writeLong(time);
-            reply.writeLong(currentTimeMillis());
+            reply->writeByte(CONNECTION_REQUEST_ACCEPTED);
+            reply->writeUnsignedByte(4);
+            reply->writeUnsignedByte(ByteBuffer::flip(192));
+            reply->writeUnsignedByte(ByteBuffer::flip(168));
+            reply->writeUnsignedByte(ByteBuffer::flip(1));
+            reply->writeUnsignedByte(ByteBuffer::flip(66));
+            reply->writeUnsignedShort(19132);
+            reply->writeShort(0); //Unknown
+            reply->writeBytes(ADDRESSES, 70);
+            reply->writeLong(time);
+            reply->writeLong(currentTimeMillis());
 
-            encap.writeByte(FRAME_SET1);
-            encap.writeInt24bit(0);
-            encap.writeByte(0);
-            encap.writeUnsignedShort(reply.getSize() * 8);
-            encap.writeBytes(reply.getBuffer(), reply.getSize());
+            encap->writeByte(FRAME_SET1);
+            encap->writeInt24bit(0);
+            encap->writeByte(0);
+            encap->writeUnsignedShort(reply->getSize() * 8);
+            encap->writeBytes(reply->getBuffer(), reply->getSize());
 
             proxy->getBeSocket()->send(address, encap);
+            reply->release();
+            encap->release();
             break;
         }
 
         default:
             std::cout << "Unsupported RakNet ID: " << +id << std::endl;
     }
+
+    packet->release();
 }

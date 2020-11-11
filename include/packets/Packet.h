@@ -4,7 +4,7 @@
 
 class Packet {
 public:
-    virtual void read(ByteBuffer& buffer) = 0;
+    virtual void read(ByteBuffer* buffer) = 0;
 
-    virtual void write(ByteBuffer& buffer) = 0;
+    virtual void write(ByteBuffer* buffer) = 0;
 };

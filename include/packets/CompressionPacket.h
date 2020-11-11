@@ -7,11 +7,11 @@ private:
     int threshold;
 
 public:
-    void read(ByteBuffer& buffer) override {
-        threshold = buffer.readVarInt();
+    void read(ByteBuffer* buffer) override {
+        threshold = buffer->readVarInt();
     }
 
-    void write(ByteBuffer& buffer) override {
+    void write(ByteBuffer* buffer) override {
 
     }
 
