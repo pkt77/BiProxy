@@ -5,12 +5,12 @@
 
 class Proxy;
 
-class JavaPacketHandler {
+class JavaServerPacketHandler {
 private:
     Proxy* proxy;
 
 public:
-    JavaPacketHandler(Proxy* proxy) : proxy(proxy) {}
+    JavaServerPacketHandler(Proxy* proxy) : proxy(proxy) {}
 
     void handle(Connection* from, ByteBuffer* packet) const;
 

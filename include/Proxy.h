@@ -5,7 +5,10 @@
 #include <thread>
 #include <net/JavaPacketHandler.h>
 #include <net/RakNetPacketHandler.h>
+#include <data/Server.h>
+#include <net/JavaServerPacketHandler.h>
 #include "net/AbstractSocket.h"
+#include <map>
 
 class Proxy {
 private:
@@ -21,13 +24,20 @@ private:
     std::thread beThread;
 
     const JavaPacketHandler javaPacketHandler;
+    const JavaServerPacketHandler javaServerPacketHandler;
     const RakNetPacketHandler rakNetPacketHandler;
 
     std::string iconBase64;
     std::string motdString;
 
+    std::map<std::string, Server*> servers;
+
 public:
     Proxy(std::string host, unsigned short port);
+
+    Server* createServer(std::string name, std::string host, unsigned short port);
+
+    Server* getServer(std::string& name);
 
     void shutdown();
 
@@ -53,6 +63,10 @@ public:
 
     const JavaPacketHandler& getJavaPacketHandler() const {
         return javaPacketHandler;
+    }
+
+    const JavaServerPacketHandler& getJavaServerPacketHandler() const {
+        return javaServerPacketHandler;
     }
 
     const RakNetPacketHandler& getRakNetPacketHandler() const {

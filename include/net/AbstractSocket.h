@@ -13,4 +13,6 @@ public:
     virtual void send(const void* address, const char payload[], unsigned short size) = 0;
 
     virtual void stop() = 0;
+
+    virtual bool createSocket(Player* player, Server* target) = 0;
 };

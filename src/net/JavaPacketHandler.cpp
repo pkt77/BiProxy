@@ -11,10 +11,7 @@
 #define STATUS 0
 #define PING 1
 
-std::set<const void*> pinging; // insert() doesn't work if this is declared in header???
-std::set<const void*> joining;
-
-void JavaPacketHandler::handle(const void* address, ByteBuffer* packet) const {
+void JavaPacketHandler::handle(Connection* from, ByteBuffer* packet) const {
     int length = packet->readVarInt();
     unsigned int offset = packet->getOffset();
     unsigned char id = packet->readByte();
@@ -23,29 +20,29 @@ void JavaPacketHandler::handle(const void* address, ByteBuffer* packet) const {
 
     switch (id) {
         case HANDSHAKE: {
-            if (joining.find(address) != joining.end()) {
-                std::cout << packet->readString() << std::endl;
+            if (from->shook) {
+                if (from->owner == nullptr) {
+                    ByteBuffer* motd = ByteBuffer::allocateBuffer(proxy->getMotdString().length() + 5);
 
-                ByteBuffer* encr = ByteBuffer::allocateBuffer(100);
+                    motd->writeByte(STATUS);
+                    motd->writeString(proxy->getMotdString(), true);
+                    motd->prefixLength();
 
-                encr->writeByte(0);
-                encr->writeString(R"({"text":"Banned", "color":"red"})", true);
-                encr->prefixLength();
+                    proxy->getJeSocket()->send(from->socket, motd);
+                    motd->release();
+                } else {
+                    std::cout << packet->readString() << " connecting..." << std::endl;
+                    std::string server = "default";
+                    Server* hub = proxy->getServer(server);
 
-                proxy->getJeSocket()->send(address, encr);
-                encr->release();
-                break;
-            }
-
-            if (pinging.find(address) != pinging.end()) {
-                ByteBuffer* motd = ByteBuffer::allocateBuffer(proxy->getMotdString().length() + 5);
-
-                motd->writeByte(STATUS);
-                motd->writeString(proxy->getMotdString(), true);
-                motd->prefixLength();
-
-                proxy->getJeSocket()->send(address, motd);
-                motd->release();
+                    if (hub == nullptr) {
+                        std::string msg = "No default server";
+                        from->owner->disconnect(msg);
+                    } else if (!proxy->getJeSocket()->createSocket(from->owner, hub)) {
+                        std::string msg = "Failed to connect to default server";
+                        from->owner->disconnect(msg);
+                    }
+                }
                 break;
             }
 
@@ -55,11 +52,11 @@ void JavaPacketHandler::handle(const void* address, ByteBuffer* packet) const {
 
             std::cout << hand.getVersion() << '-' << hand.getAddress() << ':' << hand.getPort() << '+' << +hand.getState() << std::endl;
 
-            if (hand.getState() == 1) {
-                pinging.insert(address);
-            } else {
-                joining.insert(address);
+            if (hand.getState() == 2) {
+                from->owner = new Player(proxy, from->socket);
+                from->owner->handshakePacket = hand;
             }
+            from->shook = true;
             break;
         }
 
@@ -71,7 +68,7 @@ void JavaPacketHandler::handle(const void* address, ByteBuffer* packet) const {
             pong->writeByte(PING);
             pong->writeLong(time);
 
-            proxy->getJeSocket()->send(address, pong);
+            proxy->getJeSocket()->send(from->socket, pong);
             pong->release();
             break;
         }
@@ -92,13 +89,11 @@ void JavaPacketHandler::handle(const void* address, ByteBuffer* packet) const {
     packet->setOffset(offset + length);
 
     if (packet->isReadable()) {
-        handle(address, packet);
+        handle(from, packet);
     } else {
         packet->release();
     }
 }
 
-void JavaPacketHandler::disconnect(const void* address) const {
-    pinging.erase(address);
-    joining.erase(address);
+void JavaPacketHandler::disconnect(Connection* from) const {
 }

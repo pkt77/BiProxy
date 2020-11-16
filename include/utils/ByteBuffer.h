@@ -17,7 +17,7 @@ private:
 public:
     static ByteBuffer* allocateBuffer(unsigned int size, bool copy = false);
 
-    ByteBuffer(unsigned int size) : size(size), bufferSize(size), buffer(new char[size]) {}
+    ByteBuffer(unsigned int size) : size(0), bufferSize(size), buffer(new char[size]) {}
 
     ByteBuffer(const char buffer[], unsigned int size);
 

@@ -11,7 +11,7 @@
 
 #endif
 
-Proxy::Proxy(std::string host, unsigned short port) : host(host), javaPacketHandler(this), rakNetPacketHandler(this) {
+Proxy::Proxy(std::string host, unsigned short port) : host(host), javaPacketHandler(this), javaServerPacketHandler(this), rakNetPacketHandler(this) {
     std::string line;
     std::ifstream file("motd.json");
 
@@ -46,6 +46,22 @@ Proxy::Proxy(std::string host, unsigned short port) : host(host), javaPacketHand
 #else
     //Unix sockets
 #endif
+
+    createServer("default", "127.0.0.1", 25566);
+}
+
+Server* Proxy::createServer(std::string name, std::string host, unsigned short port) {
+    Server* server = new Server(name, host, port);
+
+    servers[name] = server;
+
+    return server;
+}
+
+Server* Proxy::getServer(std::string& name) {
+    auto it = servers.find(name);
+
+    return it == servers.end() ? nullptr : it->second;
 }
 
 void Proxy::shutdown() {
