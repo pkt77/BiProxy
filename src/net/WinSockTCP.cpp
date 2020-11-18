@@ -22,8 +22,8 @@ void WinSockTCP::start() {
 
     //char error_code;
     //int error_code_size = sizeof(error_code);
-    char buffer[1024] = {0};
-
+    int size = 900000000;
+    char* buffer = new char[size];
     TIMEVAL timeout{0, 1000};
 
     while (proxy->isRunning()) {
@@ -34,9 +34,9 @@ void WinSockTCP::start() {
         }
 
         auto iter = connections.begin();
-        auto end = connections.end();
+        // auto end = connections.end();
 
-        while (iter != end) {
+        while (iter != connections.end()) {
             Connection* connection = *iter;
             SOCKET socket = (SOCKET) connection->socket;
             fd_set readable;
@@ -44,24 +44,30 @@ void WinSockTCP::start() {
             FD_ZERO(&readable);
             FD_SET(socket, &readable);
 
-            int result = select(NULL, &readable, nullptr, nullptr, nullptr);
+            int result = select(NULL, &readable, nullptr, nullptr, &timeout);
 
             if (result == SOCKET_ERROR) {
                 std::cout << "TCP Select error!" << std::endl;
+                iter = connections.erase(iter);
                 continue;
             }
 
             if (!FD_ISSET(socket, &readable)) {
+                iter++;
                 continue;
             }
 
-            int bytes = recv(socket, buffer, sizeof(buffer), 0);
+            int bytes = recv(socket, buffer, size, 0);
 
             if (bytes == 0) {
                 iter = connections.erase(iter);
 
                 if (connection->owner == nullptr || connection->socket == connection->owner->getSocket()) {
                     proxy->getJavaPacketHandler().disconnect(connection);
+
+                    if (connection->owner != nullptr && connection->owner->connectingSocket != nullptr) {
+                        closesocket((SOCKET) connection->owner->connectingSocket);
+                    }
                 } else {
                     proxy->getJavaServerPacketHandler().disconnect(connection);
                 }
@@ -82,15 +88,20 @@ void WinSockTCP::start() {
 
             if (connection->owner == nullptr || connection->socket == connection->owner->getSocket()) {
                 std::async(std::launch::async, &JavaPacketHandler::handle, proxy->getJavaPacketHandler(), connection, packet);
+                //proxy->getJavaPacketHandler().handle(connection, packet);
             } else {
                 std::async(std::launch::async, &JavaServerPacketHandler::handle, proxy->getJavaServerPacketHandler(), connection, packet);
+                //proxy->getJavaServerPacketHandler().handle(connection, packet);
             }
         }
     }
+
+    delete[] buffer;
 }
 
-void WinSockTCP::send(const void* address, const char payload[], unsigned short size) {
-    ::send((SOCKET) address, payload, size, 0);
+bool WinSockTCP::send(const void* address, const char payload[], unsigned int size) {
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    return ::send((SOCKET) address, payload, size, 0) != SOCKET_ERROR;
 }
 
 bool WinSockTCP::createSocket(Player* player, Server* target) {

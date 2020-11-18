@@ -12,87 +12,104 @@
 #define PING 1
 
 void JavaPacketHandler::handle(Connection* from, ByteBuffer* packet) const {
-    int length = packet->readVarInt();
-    unsigned int offset = packet->getOffset();
-    unsigned char id = packet->readByte();
+    int length;
+    unsigned int offset;
+    unsigned char id;
+    unsigned char bytes;
 
-    //std::cout << length << ' ' << packet->readableBytes() << " ID: " << +id << std::endl;
+    while (packet->isReadable()) {
+        length = packet->readVarInt();
+        offset = packet->getOffset();
+        id = packet->readByte();
+        bytes = varIntLength(length);
 
-    switch (id) {
-        case HANDSHAKE: {
-            if (from->shook) {
-                if (from->owner == nullptr) {
-                    ByteBuffer* motd = ByteBuffer::allocateBuffer(proxy->getMotdString().length() + 5);
+        // std::cout << length << ' ' << packet->readableBytes() << " CLI ID: " << +id << std::endl;
 
-                    motd->writeByte(STATUS);
-                    motd->writeString(proxy->getMotdString(), true);
-                    motd->prefixLength();
-
-                    proxy->getJeSocket()->send(from->socket, motd);
-                    motd->release();
-                } else {
-                    std::cout << packet->readString() << " connecting..." << std::endl;
-                    std::string server = "default";
-                    Server* hub = proxy->getServer(server);
-
-                    if (hub == nullptr) {
-                        std::string msg = "No default server";
-                        from->owner->disconnect(msg);
-                    } else if (!proxy->getJeSocket()->createSocket(from->owner, hub)) {
-                        std::string msg = "Failed to connect to default server";
-                        from->owner->disconnect(msg);
-                    }
+        switch (id) {
+            case HANDSHAKE: {
+                if (from->owner != nullptr && from->owner->connectingSocket != nullptr) {
+                    break;
                 }
+                if (from->shook) {
+                    if (from->owner == nullptr) {
+                        ByteBuffer* motd = ByteBuffer::allocateBuffer(proxy->getMotdString().length() + 5);
+
+                        motd->writeByte(STATUS);
+                        motd->writeString(proxy->getMotdString(), true);
+                        motd->prefixLength();
+
+                        proxy->getJeSocket()->send(from->socket, motd);
+                        motd->release();
+                    } else {
+                        from->owner->setUsername(packet->readString());
+                        std::cout << from->owner->getUsername() << " connecting..." << std::endl;
+                        std::string server = "default";
+                        Server* hub = proxy->getServer(server);
+
+                        if (hub == nullptr) {
+                            std::string msg = "No default server";
+                            from->owner->disconnect(msg);
+                        } else if (!from->owner->connect(hub)) {
+                            std::string msg = "Failed to connect to default server";
+                            from->owner->disconnect(msg);
+                        }
+                    }
+                    break;
+                }
+
+                HandshakePacket hand;
+
+                hand.read(packet);
+
+                std::cout << hand.getVersion() << '-' << hand.getAddress() << ':' << hand.getPort() << '+' << +hand.getState() << std::endl;
+
+                if (hand.getState() == 2) {
+                    from->owner = new Player(proxy, from->socket);
+                    from->owner->handshakePacket = hand;
+                }
+                from->shook = true;
                 break;
             }
 
-            HandshakePacket hand;
+            case PING: {
+                ByteBuffer* pong = ByteBuffer::allocateBuffer(10);
+                long long time = packet->readLong();
 
-            hand.read(packet);
+                pong->writeVarInt(9);
+                pong->writeByte(PING);
+                pong->writeLong(time);
 
-            std::cout << hand.getVersion() << '-' << hand.getAddress() << ':' << hand.getPort() << '+' << +hand.getState() << std::endl;
+                if (from->owner == nullptr) {
+                    proxy->getJeSocket()->send(from->socket, pong);
+                } else {
+                    proxy->getJeSocket()->send(from->owner->connectingSocket, pong);
+                }
 
-            if (hand.getState() == 2) {
-                from->owner = new Player(proxy, from->socket);
-                from->owner->handshakePacket = hand;
+                pong->release();
+                break;
             }
-            from->shook = true;
-            break;
-        }
 
-        case PING: {
-            ByteBuffer* pong = ByteBuffer::allocateBuffer(10);
-            long long time = packet->readLong();
-
-            pong->writeVarInt(9);
-            pong->writeByte(PING);
-            pong->writeLong(time);
-
-            proxy->getJeSocket()->send(from->socket, pong);
-            pong->release();
-            break;
-        }
-
-        case 3: {
+/*        case 3: {
             CompressionPacket comp;
 
             comp.read(packet);
 
             std::cout << comp.getThreshold() << std::endl;
             break;
+        }*/
+
+            default:
+                break;
         }
 
-        default:
-            std::cout << "UNSUPPORTED PACKET " << +id << std::endl;
+        if (from->owner != nullptr && from->owner->connectingSocket != nullptr) {
+            proxy->getJeSocket()->send(from->owner->connectingSocket, packet->getBuffer() + offset - bytes, bytes + length);
+        }
+
+        packet->setOffset(offset + length);
     }
 
-    packet->setOffset(offset + length);
-
-    if (packet->isReadable()) {
-        handle(from, packet);
-    } else {
-        packet->release();
-    }
+    packet->release();
 }
 
 void JavaPacketHandler::disconnect(Connection* from) const {

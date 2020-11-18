@@ -2,8 +2,26 @@
 
 #include <Proxy.h>
 
-void Player::connect(Server* target) {
-    proxy->getJeSocket()->createSocket(this, target);
+bool Player::connect(Server* target) {
+    bool connected = proxy->getJeSocket()->createSocket(this, target);
+
+    if (connected) {
+        ByteBuffer* login = ByteBuffer::allocateBuffer(100);
+
+        handshakePacket.write(login);
+        proxy->getJeSocket()->send(connectingSocket, login);
+        login->release();
+        login->use();
+
+        login->writeByte(0);
+        login->writeString(username, true);
+        login->prefixLength();
+
+        proxy->getJeSocket()->send(connectingSocket, login);
+        login->release();
+    }
+
+    return connected;
 }
 
 void Player::disconnect(std::string& reason) const {
@@ -18,5 +36,5 @@ void Player::disconnect(std::string& reason) const {
 }
 
 void Player::sendPacket(ByteBuffer* packet) const {
-    proxy->getJeSocket()->send(getSocket(), packet);
+    proxy->getJeSocket()->send(socket, packet);
 }

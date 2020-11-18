@@ -8,7 +8,7 @@ public:
 
     void start() override;
 
-    void send(const void* address, const char payload[], unsigned short size) override;
+    bool send(const void* address, const char payload[], unsigned int size) override;
 
     bool createSocket(Player* player, Server* target) override;
 };

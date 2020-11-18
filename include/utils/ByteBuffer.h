@@ -79,6 +79,8 @@ public:
 
     int readInt();
 
+    void writeInt(int value);
+
     long long readLong();
 
     void writeLong(long long value);
@@ -111,7 +113,7 @@ public:
         return offset;
     }
 
-    unsigned short getSize() const {
+    unsigned int getSize() const {
         return size;
     }
 

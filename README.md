@@ -9,9 +9,16 @@ I am in no way a C++ professional, but I have been writing Java for about 10 yea
 
 Goals & Progress
 -
-Currently this software only handles ping packets for both editions and responds with the MOTD.
+Currently this software:
+- Handles ping packets for both editions and responds with the MOTD
+- Handles logins for Java edition
+- Logs in (offline mode) and passes Java packets to a single local server
 
-Next goal: handle login packets and deny them (as a test)
+Next goal: handle bedrock login packets and deny them (as a test)
+
+For bedrock, there's 2 ways to handle players: Proxy all packets same as Java edition or use the Transfer packet in which the proxy just keeps track of servers and players. Might make this an option. The latter would require a server plugin, while the former *might* be optional, for features such as IP forwarding and plugin messages (depending on how clients authenticate logins with servers).
+
+Currently will only be supporting the latest protocol versions (1.16). Eventually will get into supporting past versions.
 
 I'm writing this on Windows, so this project doesn't support Unix systems just yet.
 
@@ -19,7 +26,7 @@ The end goal is to support the latest versions without cross-play, but I'd like 
 
 I'd like to make some sort of API, maybe even Java plugin support for those that don't know C++
 
-####BungeeCord
+###BungeeCord
 I plan to mimic the BungeeCord protocol so there will be no need to write a custom server jar.
 
 I also plan to use the same plugin channel messages so server plugins can interact with the proxy without needing additional code.

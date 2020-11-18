@@ -3,6 +3,7 @@
 #include <iostream>
 #include <list>
 #include <mutex>
+#include "utils/Utils.h"
 
 std::list<ByteBuffer*> POOL;
 std::mutex POOL_LOCK;
@@ -29,6 +30,7 @@ ByteBuffer* ByteBuffer::allocateBuffer(unsigned int size, bool copy) {
     POOL_LOCK.unlock();
 
     if (copy) {
+        buff->ensureWritable(buff->bufferSize - size);
         buff->size = size;
     }
 
@@ -53,19 +55,7 @@ void ByteBuffer::ensureWritable(unsigned short bytes) {
 }
 
 void ByteBuffer::prefixLength() {
-    unsigned char bytes;
-
-    if ((size & 0xFFFFFF80) == 0) {
-        bytes = 1;
-    } else if ((size & 0xFFFFC000) == 0) {
-        bytes = 2;
-    } else if ((size & 0xFFE00000) == 0) {
-        bytes = 3;
-    } else if ((size & 0xF0000000) == 0) {
-        bytes = 4;
-    } else {
-        bytes = 5;
-    }
+    unsigned char bytes = varIntLength(size);
 
     ensureWritable(bytes);
 
@@ -158,6 +148,14 @@ int ByteBuffer::readInt() {
            ((readByte() & 255) << 16) +
            ((readByte() & 255) << 8) +
            (readByte() & 255);
+}
+
+void ByteBuffer::writeInt(int value) {
+    ensureWritable(4);
+    writeByte((unsigned int) value >> 24);
+    writeByte((unsigned int) value >> 16);
+    writeByte((unsigned int) value >> 8);
+    writeByte((unsigned int) value);
 }
 
 long long ByteBuffer::readLong() {

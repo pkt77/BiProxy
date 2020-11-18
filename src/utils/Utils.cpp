@@ -15,3 +15,23 @@ long long randomLong() {
 long long currentTimeMillis() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
+
+char varIntLength(int value) {
+    if ((value & 0xFFFFFF80) == 0) {
+        return 1;
+    }
+
+    if ((value & 0xFFFFC000) == 0) {
+        return 2;
+    }
+
+    if ((value & 0xFFE00000) == 0) {
+        return 3;
+    }
+
+    if ((value & 0xF0000000) == 0) {
+        return 4;
+    }
+
+    return 5;
+}
