@@ -82,11 +82,11 @@ void ByteBuffer::writeBytes(const char* bytes, unsigned short length) {
 }
 
 short ByteBuffer::readShort() {
-    return (readByte() << 8) + readByte();
+    return readUnsignedShort();
 }
 
 unsigned short ByteBuffer::readUnsignedShort() {
-    return (readByte() << 8) + readByte();
+    return (readUnsignedByte() << 8) + readUnsignedByte();
 }
 
 void ByteBuffer::writeUnsignedShort(unsigned short value) {
@@ -132,15 +132,15 @@ void ByteBuffer::writeVarInt(int value) {
 }
 
 unsigned int ByteBuffer::readInt24bit() {
-    return ((readByte() & 255) << 16) +
+    return ((readByte() & 255)) +
            ((readByte() & 255) << 8) +
-           (readByte() & 255);
+           ((readByte() & 255) << 16);
 }
 
 void ByteBuffer::writeInt24bit(unsigned int value) {
-    writeByte(value >> 16);
-    writeByte(value >> 8);
     writeByte(value);
+    writeByte(value >> 8);
+    writeByte(value >> 16);
 }
 
 int ByteBuffer::readInt() {
@@ -148,6 +148,13 @@ int ByteBuffer::readInt() {
            ((readByte() & 255) << 16) +
            ((readByte() & 255) << 8) +
            (readByte() & 255);
+}
+
+int ByteBuffer::readIntLE() {
+    return (readByte() & 255) +
+           ((readByte() & 255) << 8) +
+           ((readByte() & 255) << 16) +
+           ((readByte() & 255) << 24);
 }
 
 void ByteBuffer::writeInt(int value) {
@@ -179,54 +186,6 @@ void ByteBuffer::writeLong(long long value) {
     writeByte((unsigned long long) value >> 16);
     writeByte((unsigned long long) value >> 8);
     writeByte((unsigned long long) value);
-}
-
-char* ByteBuffer::readString() {
-    int length = readVarInt();
-    char* string = new char[length];
-
-    for (int i = 0; i < length; i++) {
-        string[i] = readByte();
-    }
-
-    string[length] = 0;
-    return string;
-}
-
-void ByteBuffer::writeString(const std::string& value, bool varInt) {
-    unsigned short length = value.length();
-
-    if (varInt) {
-        ensureWritable(5 + length);
-        writeVarInt(length);
-    } else {
-        ensureWritable(2 + length);
-        writeShort(length);
-    }
-
-    memcpy(buffer + offset, value.data(), length);
-    offset += length;
-    size += length;
-}
-
-void ByteBuffer::writeString(const char* value, bool varInt) {
-    size_t length = strlen(value);
-
-    if (varInt) {
-        ensureWritable(5 + length);
-        writeVarInt(length);
-
-        /*if (length > 32767) {
-            std::cout << "String is too large!" << std::endl;
-        }*/
-    } else {
-        ensureWritable(2 + length);
-        writeShort(length);
-    }
-
-    memcpy(buffer + offset, value, length);
-    offset += length;
-    size += length;
 }
 
 void ByteBuffer::release() {

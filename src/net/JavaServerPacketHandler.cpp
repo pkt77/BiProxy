@@ -33,12 +33,12 @@ void JavaServerPacketHandler::handle(Connection* from, ByteBuffer* packet) const
             }
 
             case 0x17: {
-                std::cout << packet->readString() << std::endl;
+                //std::cout << packet->readString(&ByteBuffer::readVarInt) << std::endl;
                 break;
             }
 
             case 0x19:
-                std::cout << packet->readString() << std::endl;
+                //std::cout << packet->readString(&ByteBuffer::readVarInt) << std::endl;
                 break;
 
             default:

@@ -7,7 +7,7 @@ private:
     static constexpr char FML[] = {0, 'F', 'M', 'L', 0};
 
     int version;
-    char* address;
+    std::string address;
     unsigned short port;
     bool isForge;
     unsigned char state;
@@ -15,7 +15,7 @@ private:
 public:
     void read(ByteBuffer* buffer) override {
         version = buffer->readVarInt();
-        address = buffer->readString();
+        address = buffer->readString<int>(&ByteBuffer::readVarInt);
         port = buffer->readUnsignedShort();
         state = buffer->readVarInt();
     }
@@ -25,7 +25,7 @@ public:
         buffer->writeVarInt(version);
         auto& c = "localhost\00localhost\00""1ec83775-a408-47de-adef-1d537424f09e";
 
-        buffer->writeString(std::string(std::begin(c), std::end(c)), true);
+        buffer->writeString<int>(std::string(std::begin(c), std::end(c)), &ByteBuffer::writeVarInt);
         buffer->writeUnsignedShort(port);
         buffer->writeUnsignedByte(state);
         buffer->prefixLength();
@@ -35,7 +35,7 @@ public:
         return version;
     }
 
-    char* getAddress() const {
+    std::string& getAddress() {
         return address;
     }
 

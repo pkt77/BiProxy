@@ -14,7 +14,7 @@ bool Player::connect(Server* target) {
         login->use();
 
         login->writeByte(0);
-        login->writeString(username, true);
+        login->writeString<int>(username, &ByteBuffer::writeVarInt);
         login->prefixLength();
 
         proxy->getJeSocket()->send(connectingSocket, login);
@@ -28,7 +28,7 @@ void Player::disconnect(std::string& reason) const {
     ByteBuffer* kick = ByteBuffer::allocateBuffer(100);
 
     kick->writeByte(0);
-    kick->writeString("{\"text\":\"" + reason + "\", \"color\":\"red\"}", true);
+    kick->writeString<int>("{\"text\":\"" + reason + "\", \"color\":\"red\"}", &ByteBuffer::writeVarInt);
     kick->prefixLength();
 
     sendPacket(kick);

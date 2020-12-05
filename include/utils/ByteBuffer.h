@@ -79,17 +79,22 @@ public:
 
     int readInt();
 
+    int readIntLE();
+
     void writeInt(int value);
 
     long long readLong();
 
     void writeLong(long long value);
 
-    char* readString();
+    template<class lengthType>
+    std::string readString(lengthType(ByteBuffer::* lengthMethod)());
 
-    void writeString(const std::string& value, bool varInt);
+    template<class lengthType>
+    void writeString(const std::string& value, void(ByteBuffer::* lengthMethod)(lengthType));
 
-    void writeString(const char* value, bool varInt);
+    template<class lengthType>
+    void writeString(const char* value, void(ByteBuffer::* lengthMethod)(lengthType));
 
     void release();
 
@@ -121,3 +126,5 @@ public:
         this->offset = offset;
     }
 };
+
+#include "ByteBuffer.inl"

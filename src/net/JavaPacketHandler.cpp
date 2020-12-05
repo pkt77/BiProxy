@@ -35,13 +35,13 @@ void JavaPacketHandler::handle(Connection* from, ByteBuffer* packet) const {
                         ByteBuffer* motd = ByteBuffer::allocateBuffer(proxy->getMotdString().length() + 5);
 
                         motd->writeByte(STATUS);
-                        motd->writeString(proxy->getMotdString(), true);
+                        motd->writeString<int>(proxy->getMotdString(), &ByteBuffer::writeVarInt);
                         motd->prefixLength();
 
                         proxy->getJeSocket()->send(from->socket, motd);
                         motd->release();
                     } else {
-                        from->owner->setUsername(packet->readString());
+                        from->owner->setUsername(packet->readString<int>(&ByteBuffer::readVarInt));
                         std::cout << from->owner->getUsername() << " connecting..." << std::endl;
                         std::string server = "default";
                         Server* hub = proxy->getServer(server);
