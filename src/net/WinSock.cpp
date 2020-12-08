@@ -33,7 +33,7 @@ void WinSock::setup(unsigned short port, int type, int protocol) {
 }
 
 void WinSock::stop() {
-    std::cout << "Killing Winsock" << std::endl;
+    std::cout << "Killing Winsock " << ntohs(addr.sin_port) << std::endl;
     shutdown(server, SD_BOTH);
     WSACleanup();
 }

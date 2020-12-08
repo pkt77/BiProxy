@@ -45,7 +45,7 @@ void ByteBuffer::ensureWritable(unsigned short bytes) {
     if (size + bytes >= bufferSize) {
         char* newBuff = new char[bufferSize + bytes + BUFFER_SIZE];
 
-        std::memcpy(newBuff, buffer, bufferSize);
+        memcpy(newBuff, buffer, size);
 
         delete[] buffer;
         buffer = newBuff;
@@ -66,6 +66,13 @@ void ByteBuffer::prefixLength() {
     offset = 0;
     writeVarInt(size);
     offset = 0;
+}
+
+unsigned char ByteBuffer::readUnsignedByte() {
+    if (offset == size) {
+        throw "Cannot read anymore";
+    }
+    return buffer[offset++];
 }
 
 void ByteBuffer::writeByte(char value) {
@@ -100,20 +107,18 @@ void ByteBuffer::writeShort(short value) {
 }
 
 int ByteBuffer::readVarInt() {
-    int numRead = 0;
-    int result = 0;
     char read;
+    char numRead = 0;
+    int result = 0;
 
     do {
         read = readByte();
-        int value = (read & 0b01111111);
-        result |= (value << (7 * numRead));
+        result |= (read & 0b01111111) << (7 * numRead);
 
-        numRead++;
-        if (numRead > 5) {
-            throw ("VarInt is too big");
+        if (++numRead > 5) {
+            throw "VarInt is too big";
         }
-    } while ((read & 0b10000000) != 0);
+    } while ((read & 0x80) == 0x80);
 
     return result;
 }

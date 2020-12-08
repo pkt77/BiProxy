@@ -6,7 +6,6 @@
 #include <net/JavaPacketHandler.h>
 #include <net/RakNetPacketHandler.h>
 #include <data/Server.h>
-#include <net/JavaServerPacketHandler.h>
 #include "net/AbstractSocket.h"
 #include <map>
 
@@ -24,7 +23,6 @@ private:
     std::thread beThread;
 
     const JavaPacketHandler javaPacketHandler;
-    const JavaServerPacketHandler javaServerPacketHandler;
     const RakNetPacketHandler rakNetPacketHandler;
 
     std::string iconBase64;
@@ -63,10 +61,6 @@ public:
 
     const JavaPacketHandler& getJavaPacketHandler() const {
         return javaPacketHandler;
-    }
-
-    const JavaServerPacketHandler& getJavaServerPacketHandler() const {
-        return javaServerPacketHandler;
     }
 
     const RakNetPacketHandler& getRakNetPacketHandler() const {

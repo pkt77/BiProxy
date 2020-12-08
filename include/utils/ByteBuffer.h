@@ -34,12 +34,10 @@ public:
     }
 
     char readByte() {
-        return buffer[offset++];
+        return readUnsignedByte();
     }
 
-    unsigned char readUnsignedByte() {
-        return buffer[offset++];
-    }
+    unsigned char readUnsignedByte();
 
     void writeByte(char value);
 
@@ -107,11 +105,15 @@ public:
     }
 
     bool isReadable() const {
-        return readableBytes() > 0;
+        return offset < size;
     }
 
     char* getBuffer() const {
         return buffer;
+    }
+
+    unsigned int getBufferSize() const {
+        return bufferSize;
     }
 
     unsigned int getOffset() const {
@@ -124,6 +126,10 @@ public:
 
     void setOffset(unsigned int offset) {
         this->offset = offset;
+    }
+
+    void setSize(unsigned int size) {
+        this->size = size;
     }
 };
 

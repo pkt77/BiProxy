@@ -47,6 +47,8 @@ struct JUUID {
 
 struct Connection {
     void* socket;
+    ByteBuffer* buffer;
+    bool processing;
     bool shook;
     Player* owner;
 };

@@ -19,25 +19,26 @@ WinSockTCP::WinSockTCP(Proxy* proxy, unsigned short port) : WinSock(proxy) {
 void WinSockTCP::start() {
     SOCKET newConnection;
     sockaddr clientaddr{};
-
-    //char error_code;
-    //int error_code_size = sizeof(error_code);
-    int size = 900000000;
-    char* buffer = new char[size];
-    TIMEVAL timeout{0, 1000};
+    TIMEVAL timeout{0, 100};
+    ByteBuffer* buffer;
 
     while (proxy->isRunning()) {
         newConnection = accept(server, &clientaddr, &addrlen);
 
         if (newConnection != INVALID_SOCKET) {
-            connections.push_back(new Connection{reinterpret_cast<void*>(newConnection), false, nullptr});
+            connections.push_back(new Connection{reinterpret_cast<void*>(newConnection), ByteBuffer::allocateBuffer(1024), false, false, nullptr});
         }
 
         auto iter = connections.begin();
-        // auto end = connections.end();
 
         while (iter != connections.end()) {
             Connection* connection = *iter;
+
+            if (connection->processing) {
+                iter++;
+                continue;
+            }
+
             SOCKET socket = (SOCKET) connection->socket;
             fd_set readable;
 
@@ -57,51 +58,47 @@ void WinSockTCP::start() {
                 continue;
             }
 
-            int bytes = recv(socket, buffer, size, 0);
+            buffer = connection->buffer;
+            int bytes = recv(socket, buffer->getBuffer() + buffer->getSize(), buffer->getBufferSize() - buffer->getSize(), 0);
+
+            if (bytes == SOCKET_ERROR) {
+                std::cout << "RECV error " << WSAGetLastError() << std::endl;
+                iter = connections.erase(iter);
+                continue;
+            }
 
             if (bytes == 0) {
                 iter = connections.erase(iter);
 
-                if (connection->owner == nullptr || connection->socket == connection->owner->getSocket()) {
-                    proxy->getJavaPacketHandler().disconnect(connection);
+                proxy->getJavaPacketHandler().disconnect(connection);
 
-                    if (connection->owner != nullptr && connection->owner->connectingSocket != nullptr) {
+                if (connection->owner != nullptr) {
+                    if (connection->owner->connectingSocket != nullptr) {
                         closesocket((SOCKET) connection->owner->connectingSocket);
                     }
-                } else {
-                    proxy->getJavaServerPacketHandler().disconnect(connection);
+
+                    if (connection->owner->getSocket() == connection->socket) {
+                        delete connection->owner;
+                    }
                 }
 
-                if (connection->owner != nullptr && connection->owner->getSocket() == connection->socket) {
-                    delete connection->owner;
-                }
                 delete connection;
-
                 continue;
             }
 
             iter++;
 
-            ByteBuffer* packet = ByteBuffer::allocateBuffer(bytes, true);
+            buffer->setSize(buffer->getSize() + bytes);
+            connection->processing = true;
 
-            memcpy(packet->getBuffer(), buffer, bytes);
-
-            if (connection->owner == nullptr || connection->socket == connection->owner->getSocket()) {
-                std::async(std::launch::async, &JavaPacketHandler::handle, proxy->getJavaPacketHandler(), connection, packet);
-                //proxy->getJavaPacketHandler().handle(connection, packet);
-            } else {
-                std::async(std::launch::async, &JavaServerPacketHandler::handle, proxy->getJavaServerPacketHandler(), connection, packet);
-                //proxy->getJavaServerPacketHandler().handle(connection, packet);
-            }
+            std::async(std::launch::async, &JavaPacketHandler::handle, proxy->getJavaPacketHandler(), connection);
         }
     }
-
-    delete[] buffer;
 }
 
 bool WinSockTCP::send(const void* address, const char payload[], unsigned int size) {
     //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    return ::send((SOCKET) address, payload, size, 0) != SOCKET_ERROR;
+    return ::send((SOCKET) address, payload, size, MSG_DONTROUTE) != SOCKET_ERROR;
 }
 
 bool WinSockTCP::createSocket(Player* player, Server* target) {
@@ -116,7 +113,7 @@ bool WinSockTCP::createSocket(Player* player, Server* target) {
 
     if (addrError == NO_ERROR && connectError == NO_ERROR) {
         player->connectingSocket = reinterpret_cast<void*>(sock);
-        connections.push_back(new Connection{player->connectingSocket, true, player});
+        connections.push_back(new Connection{player->connectingSocket, ByteBuffer::allocateBuffer(250000), false, true, player});
         std::cout << "Connected to server" << std::endl;
         return true;
     }

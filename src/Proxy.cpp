@@ -11,7 +11,7 @@
 
 #endif
 
-Proxy::Proxy(std::string host, unsigned short port) : host(host), javaPacketHandler(this), javaServerPacketHandler(this), rakNetPacketHandler(this) {
+Proxy::Proxy(std::string host, unsigned short port) : host(host), javaPacketHandler(this), rakNetPacketHandler(this) {
     std::string line;
     std::ifstream file("motd.json");
 
