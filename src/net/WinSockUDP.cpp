@@ -1,7 +1,7 @@
 #include "net/WinSockUDP.h"
 
-WinSockUDP::WinSockUDP(Proxy* proxy, unsigned short port) : WinSock(proxy) {
-    setup(port, SOCK_DGRAM, IPPROTO_UDP);
+WinSockUDP::WinSockUDP(Proxy* proxy, const char* host, unsigned short port) : WinSock(proxy) {
+    setup(host, port, SOCK_DGRAM, IPPROTO_UDP);
 }
 
 void WinSockUDP::start() {

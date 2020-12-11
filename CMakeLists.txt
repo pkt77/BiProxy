@@ -3,8 +3,10 @@ project(BiProxy)
 
 set(CMAKE_CXX_STANDARD 17)
 
+add_subdirectory(lib/yaml-cpp)
 add_subdirectory(lib/zlib "${CMAKE_BINARY_DIR}/zlib-build")
 include_directories(lib/zlib "${CMAKE_BINARY_DIR}/zlib-build")
+include_directories(lib/yaml-cpp/include)
 include_directories(include)
 
 if (WIN32)
@@ -19,4 +21,4 @@ endif (UNIX)
 file(GLOB SOURCE_FILES src/* src/net/* src/data/* src/packets/* src/utils/*)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOCKET_HANDLER})
-target_link_libraries(${PROJECT_NAME} zlibstatic)
+target_link_libraries(${PROJECT_NAME} zlibstatic yaml-cpp)

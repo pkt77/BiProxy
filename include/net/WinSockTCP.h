@@ -4,7 +4,7 @@
 
 class WinSockTCP : public WinSock {
 public:
-    WinSockTCP(Proxy* proxy, unsigned short port);
+    WinSockTCP(Proxy* proxy, const char* host, unsigned short port);
 
     void start() override;
 

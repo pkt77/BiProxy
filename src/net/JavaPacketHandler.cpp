@@ -84,10 +84,11 @@ bool JavaPacketHandler::handleClient(Connection* from) const {
 
             if (from->shook) {
                 if (from->owner == nullptr) {
-                    ByteBuffer* motd = ByteBuffer::allocateBuffer(proxy->getMotdString().length() + 5);
+                    std::string motdJson = proxy->getDefaultPing().toJSON();
+                    ByteBuffer* motd = ByteBuffer::allocateBuffer(motdJson.length() + 5);
 
                     motd->writeByte(STATUS);
-                    motd->writeString<int>(proxy->getMotdString(), &ByteBuffer::writeVarInt);
+                    motd->writeString<int>(motdJson, &ByteBuffer::writeVarInt);
                     motd->prefixLength();
 
                     proxy->getJeSocket()->send(from->socket, motd);

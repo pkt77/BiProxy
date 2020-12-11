@@ -35,3 +35,13 @@ char varIntLength(int value) {
 
     return 5;
 }
+
+std::pair<std::string, unsigned short> parseHost(std::string host) {
+    for (int i = 0; i < host.length(); i++) {
+        if (host[i] == ':') {
+            return std::pair<std::string, unsigned short>(host.substr(0, i), std::stoi(host.substr(i + 1, host.length())));
+        }
+    }
+
+    throw "Failed to parse host";
+}

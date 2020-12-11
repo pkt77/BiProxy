@@ -15,7 +15,7 @@ Currently this software:
 - Logs in (offline mode) and passes Java packets to a single local server
 - Handle bedrock login packets and kicks for "Outdated server" for now
 
-Next goal: Clean up code and add config to remove hard-coded values to support multiple players
+Next goal: Clean up code and remove hard-coded values to support multiple players
 
 For bedrock, there's 2 ways to handle players: Proxy all packets same as Java edition or use the Transfer packet in which the proxy just keeps track of servers and players. Might make this an option. The latter would require a server plugin, while the former *might* be optional, for features such as IP forwarding and plugin messages (depending on how clients authenticate logins with servers).
 

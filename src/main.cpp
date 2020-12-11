@@ -8,7 +8,7 @@ bool startsWith(const char* pre, const char* str) {
 }
 
 int main(int argc, char** argv) {
-    char* host;
+/*    char* host;
     unsigned short port = 25565;
 
     for (int i = 0; i < argc; i++) {
@@ -17,9 +17,9 @@ int main(int argc, char** argv) {
         } else if (startsWith("port=", argv[i])) {
             port = std::stoi(std::string(argv[i] + 5));
         }
-    }
+    }*/
 
-    Proxy proxy(host, port);
+    Proxy proxy;
 
     while (proxy.isRunning()) {
         char cmdBuffer[1024];

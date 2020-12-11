@@ -6,8 +6,8 @@
 
 std::list<Connection*> connections;
 
-WinSockTCP::WinSockTCP(Proxy* proxy, unsigned short port) : WinSock(proxy) {
-    setup(port, SOCK_STREAM, IPPROTO_TCP);
+WinSockTCP::WinSockTCP(Proxy* proxy, const char* host, unsigned short port) : WinSock(proxy) {
+    setup(host, port, SOCK_STREAM, IPPROTO_TCP);
 
     u_long nonBlock = 1;
 

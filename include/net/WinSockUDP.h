@@ -4,7 +4,7 @@
 
 class WinSockUDP : public WinSock {
 public:
-    WinSockUDP(Proxy* proxy, unsigned short port);
+    WinSockUDP(Proxy* proxy, const char* host, unsigned short port);
 
     void start() override;
 

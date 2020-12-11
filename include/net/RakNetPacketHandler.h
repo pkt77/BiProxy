@@ -25,10 +25,16 @@ private:
     Proxy* proxy;
     BedrockClientHandler bedrockClientHandler;
 
+    std::string motd;
+
 public:
     RakNetPacketHandler(Proxy* proxy) : proxy(proxy), bedrockClientHandler(BedrockClientHandler(proxy)) {}
 
     void handle(const void* socket, unsigned char address[], unsigned short port, ByteBuffer* packet) const;
 
     void sendEncapsulated(const void* socket, ByteBuffer* packet, unsigned char reliability, bool deflate) const;
+
+    void setMotd(const std::string& line1, const std::string& line2) {
+        motd = std::string("MCPE;" + line1 + ";419;1.16.200;0;10;" + std::to_string(GUID) + ';' + line2 + ";Survival;1;19132;19133;");
+    }
 };

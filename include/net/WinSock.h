@@ -15,7 +15,7 @@ protected:
 
     SOCKET server;
 
-    void setup(unsigned short port, int type, int protocol);
+    void setup(const char* host, unsigned short port, int type, int protocol);
 
 public:
     WinSock(Proxy* proxy) : proxy(proxy) {}

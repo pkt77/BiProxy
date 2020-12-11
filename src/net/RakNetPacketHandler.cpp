@@ -112,10 +112,6 @@ void RakNetPacketHandler::handle(const void* socket, unsigned char address[], un
                 break;
             }
 
-            std::string motd("MCPE;ProxyServer;419;1.16.100;0;10;");
-            motd += std::to_string(GUID);
-            motd += ";BedrockTest;Survival;1;19132;19133;";
-
             long long time = packet->readLong();
             ByteBuffer* pong = ByteBuffer::allocateBuffer(motd.length() + 35);
 

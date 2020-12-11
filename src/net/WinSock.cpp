@@ -2,14 +2,14 @@
 
 #include <iostream>
 
-void WinSock::setup(unsigned short port, int type, int protocol) {
+void WinSock::setup(const char* host, unsigned short port, int type, int protocol) {
     WSAData wsaData;
 
     if (WSAStartup(WINSOCK_VERSION, &wsaData) != NO_ERROR) {
         return;
     }
 
-    InetPton(AF_INET, proxy->getHost().c_str(), &addr.sin_addr.s_addr);
+    InetPton(AF_INET, host, &addr.sin_addr.s_addr);
     addr.sin_port = htons(port);
     addr.sin_family = AF_INET;
 
@@ -29,7 +29,7 @@ void WinSock::setup(unsigned short port, int type, int protocol) {
 
     listen(server, SOMAXCONN);
 
-    std::cout << "Proxy listening on " << proxy->getHost() << ":" << port << std::endl;
+    std::cout << "Proxy listening on " << host << ":" << port << std::endl;
 }
 
 void WinSock::stop() {

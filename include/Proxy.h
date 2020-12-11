@@ -8,12 +8,10 @@
 #include <data/Server.h>
 #include "net/AbstractSocket.h"
 #include <map>
+#include <data/JavaPing.h>
 
 class Proxy {
 private:
-    const std::string host;
-    //unsigned short port;
-
     bool running = true;
 
     AbstractSocket* jeSocket;
@@ -22,30 +20,21 @@ private:
     std::thread jeThread;
     std::thread beThread;
 
-    const JavaPacketHandler javaPacketHandler;
-    const RakNetPacketHandler rakNetPacketHandler;
+    JavaPacketHandler javaPacketHandler;
+    RakNetPacketHandler rakNetPacketHandler;
 
-    std::string iconBase64;
-    std::string motdString;
+    JavaPing defaultPing;
 
     std::map<std::string, Server*> servers;
 
 public:
-    Proxy(std::string host, unsigned short port);
+    Proxy();
 
     Server* createServer(std::string name, std::string host, unsigned short port);
 
     Server* getServer(std::string& name);
 
     void shutdown();
-
-    const std::string& getHost() {
-        return host;
-    }
-
-/*    unsigned short & getPort(){
-        return port;
-    }*/
 
     const bool& isRunning() const {
         return running;
@@ -67,7 +56,7 @@ public:
         return rakNetPacketHandler;
     }
 
-    const std::string& getMotdString() const {
-        return motdString;
+    JavaPing& getDefaultPing() {
+        return defaultPing;
     }
 };
