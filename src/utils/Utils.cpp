@@ -4,6 +4,14 @@
 #include <climits>
 #include <chrono>
 
+int randomInt() {
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<int> dist(INT_MIN, INT_MAX);
+
+    return dist(mt);
+}
+
 long long randomLong() {
     std::random_device rd;
     std::mt19937 mt(rd());

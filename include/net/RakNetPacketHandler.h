@@ -20,8 +20,6 @@ private:
                                                            4, 255, 255, 255, 255, 74, 188,
                                                            4, 255, 255, 255, 255, 74, 188};
 
-    long long GUID = randomLong();
-
     Proxy* proxy;
     BedrockClientHandler bedrockClientHandler;
 
@@ -34,7 +32,5 @@ public:
 
     void sendEncapsulated(const void* socket, ByteBuffer* packet, unsigned char reliability, bool deflate) const;
 
-    void setMotd(const std::string& line1, const std::string& line2) {
-        motd = std::string("MCPE;" + line1 + ";419;1.16.200;0;10;" + std::to_string(GUID) + ';' + line2 + ";Survival;1;19132;19133;");
-    }
+    void setMotd(const std::string& line1, const std::string& line2);
 };

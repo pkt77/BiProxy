@@ -118,7 +118,7 @@ void RakNetPacketHandler::handle(const void* socket, unsigned char address[], un
             pong->writeByte(UNCONNECTED_PONG);
 
             pong->writeLong(time);
-            pong->writeLong(GUID);
+            pong->writeLong(proxy->getId());
             pong->writeBytes(MAGIC, 16);
             pong->writeString<unsigned short>(motd, &ByteBuffer::writeUnsignedShort);
 
@@ -136,7 +136,7 @@ void RakNetPacketHandler::handle(const void* socket, unsigned char address[], un
                 inc->writeByte(INCOMPATIBLE_PROTOCOL_VERSION);
                 inc->writeByte(RAKNET_PROTOCOL_VERSION);
                 inc->writeBytes(MAGIC, 16);
-                inc->writeLong(GUID);
+                inc->writeLong(proxy->getId());
 
                 proxy->getBeSocket()->send(socket, inc);
                 break;
@@ -147,7 +147,7 @@ void RakNetPacketHandler::handle(const void* socket, unsigned char address[], un
 
             reply->writeByte(OPEN_CONNECTION_REPLY_1);
             reply->writeBytes(MAGIC, 16);
-            reply->writeLong(GUID);
+            reply->writeLong(proxy->getId());
             reply->writeBoolean(false);
             reply->writeShort(mtu);
             std::cout << "MTU: " << mtu << std::endl;
@@ -171,7 +171,7 @@ void RakNetPacketHandler::handle(const void* socket, unsigned char address[], un
 
             reply->writeByte(OPEN_CONNECTION_REPLY_2);
             reply->writeBytes(MAGIC, 16);
-            reply->writeLong(GUID);
+            reply->writeLong(proxy->getId());
             reply->writeByte(4);
             reply->writeUnsignedByte(ByteBuffer::flip(address[0]));
             reply->writeUnsignedByte(ByteBuffer::flip(address[1]));
@@ -414,4 +414,8 @@ void RakNetPacketHandler::sendEncapsulated(const void* socket, ByteBuffer* packe
 
     proxy->getBeSocket()->send(socket, encap);
     encap->release();
+}
+
+void RakNetPacketHandler::setMotd(const std::string& line1, const std::string& line2) {
+    motd = std::string("MCPE;" + line1 + ";419;1.16.200;0;10;" + std::to_string(proxy->getId()) + ';' + line2 + ";Survival;1;19132;19133;");
 }

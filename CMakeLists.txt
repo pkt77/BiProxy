@@ -3,10 +3,24 @@ project(BiProxy)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_subdirectory(lib/yaml-cpp)
+#Zlib Compression
 add_subdirectory(lib/zlib "${CMAKE_BINARY_DIR}/zlib-build")
 include_directories(lib/zlib "${CMAKE_BINARY_DIR}/zlib-build")
+
+#YAML
+add_subdirectory(lib/yaml-cpp)
 include_directories(lib/yaml-cpp/include)
+
+#REST API
+#vcpkg install cpprestsdk cpprestsdk:x64-windows
+#sudo apt-get install libcpprest-dev
+#cmake params: -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake
+find_package(cpprestsdk CONFIG REQUIRED)
+
+#Encryption
+find_package(OpenSSL REQUIRED)
+#include_directories(lib/openssl/include)
+
 include_directories(include)
 
 if (WIN32)
@@ -21,4 +35,4 @@ endif (UNIX)
 file(GLOB SOURCE_FILES src/* src/net/* src/data/* src/packets/* src/utils/*)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOCKET_HANDLER})
-target_link_libraries(${PROJECT_NAME} zlibstatic yaml-cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE cpprestsdk::cpprest zlibstatic yaml-cpp OpenSSL::SSL OpenSSL::Crypto)

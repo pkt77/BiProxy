@@ -14,6 +14,8 @@ class Proxy {
 private:
     bool running = true;
 
+    long long id = randomLong();
+
     AbstractSocket* jeSocket;
     AbstractSocket* beSocket;
 
@@ -38,6 +40,10 @@ public:
 
     const bool& isRunning() const {
         return running;
+    }
+
+    long long getId() const {
+        return id;
     }
 
     AbstractSocket* getJeSocket() const {

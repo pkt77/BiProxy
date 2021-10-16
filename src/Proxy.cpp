@@ -4,6 +4,7 @@
 
 #include "utils/Base64.h"
 #include <yaml-cpp/yaml.h>
+#include <utils/Encryption.h>
 
 #ifdef _WIN32
 
@@ -14,6 +15,8 @@
 
 Proxy::Proxy() : javaPacketHandler(this), rakNetPacketHandler(this) {
     YAML::Node config;
+
+    Encryption::init(id);
 
     try {
         config = YAML::LoadFile("config.yml");

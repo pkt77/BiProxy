@@ -26,7 +26,7 @@ void WinSockTCP::start() {
         newConnection = accept(server, &clientaddr, &addrlen);
 
         if (newConnection != INVALID_SOCKET) {
-            connections.push_back(new Connection{reinterpret_cast<void*>(newConnection), ByteBuffer::allocateBuffer(1024), false, false, nullptr});
+            connections.push_back(new Connection{reinterpret_cast<void*>(newConnection), ByteBuffer::allocateBuffer(1024), false, 0, nullptr});
         }
 
         auto iter = connections.begin();
@@ -113,7 +113,7 @@ bool WinSockTCP::createSocket(Player* player, Server* target) {
 
     if (addrError == NO_ERROR && connectError == NO_ERROR) {
         player->connectingSocket = reinterpret_cast<void*>(sock);
-        connections.push_back(new Connection{player->connectingSocket, ByteBuffer::allocateBuffer(250000), false, true, player});
+        connections.push_back(new Connection{player->connectingSocket, ByteBuffer::allocateBuffer(250000), false, 2, player});
         std::cout << "Connected to server" << std::endl;
         return true;
     }

@@ -2,6 +2,8 @@
 
 #include <string>
 
+extern int randomInt();
+
 extern long long randomLong();
 
 extern long long currentTimeMillis();

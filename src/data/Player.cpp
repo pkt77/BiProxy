@@ -1,6 +1,7 @@
 #include "data/Player.h"
 
 #include <Proxy.h>
+#include <utils/Encryption.h>
 
 bool Player::connect(Server* target) {
     bool connected = proxy->getJeSocket()->createSocket(this, target);
@@ -24,8 +25,8 @@ bool Player::connect(Server* target) {
     return connected;
 }
 
-void Player::disconnect(std::string& reason) const {
-    ByteBuffer* kick = ByteBuffer::allocateBuffer(100);
+void Player::disconnect(const std::string& reason) const {
+    ByteBuffer* kick = ByteBuffer::allocateBuffer(300);
 
     kick->writeByte(0);
     kick->writeString<int>("{\"text\":\"" + reason + "\", \"color\":\"red\"}", &ByteBuffer::writeVarInt);
@@ -36,5 +37,6 @@ void Player::disconnect(std::string& reason) const {
 }
 
 void Player::sendPacket(ByteBuffer* packet) const {
+    Encryption::encode(secret, packet->getBuffer(), packet->getSize());
     proxy->getJeSocket()->send(socket, packet);
 }

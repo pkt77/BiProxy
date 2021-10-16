@@ -8,7 +8,12 @@ class Proxy;
 class Player {
 private:
     void* socket;
+
     std::string username;
+    std::string uuid;
+
+    std::string secret;
+    int token;
 
 protected:
     Proxy* proxy;
@@ -23,7 +28,7 @@ public:
 
     bool connect(Server* target);
 
-    void disconnect(std::string& reason) const;
+    void disconnect(const std::string& reason) const;
 
     void sendPacket(ByteBuffer* packet) const;
 
@@ -38,6 +43,31 @@ public:
     void setUsername(const std::string& username) {
         this->username = username;
     }
+
+    const std::string& getUUID() const {
+        return uuid;
+    }
+
+    void setUUID(const std::string& uuid) {
+        Player::uuid = uuid;
+    }
+
+
+    const std::string& getSecret() const {
+        return secret;
+    }
+
+    void setSecret(const std::string& secret) {
+        Player::secret = secret;
+    }
+
+    int getToken() const {
+        return token;
+    }
+
+    void setToken(int token) {
+        Player::token = token;
+    }
 };
 
 struct JUUID {
@@ -45,10 +75,17 @@ struct JUUID {
     long long leastSigBits;
 };
 
+/*enum ConnectionState {
+    HANDSHAKE,
+    STATUS,
+
+    LOGIN
+};*/
+
 struct Connection {
     void* socket;
     ByteBuffer* buffer;
     bool processing;
-    bool shook;
+    unsigned char state;
     Player* owner;
 };
