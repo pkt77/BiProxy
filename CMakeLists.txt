@@ -15,10 +15,10 @@ if (WIN32)
 endif (WIN32)
 
 if (UNIX)
-    #set(SOCKET_HANDLER src/Net/UniSock.cpp)
+    set(SOCKET_HANDLER src/net/UnixSock.cpp src/net/UnixSockTCP.cpp src/net/UnixSockUDP.cpp)
 endif (UNIX)
 
-file(GLOB SOURCE_FILES src/* src/net/* src/data/* src/packets/* src/utils/*)
+file(GLOB SOURCE_FILES src/* src/net/JavaPacketHandler.cpp src/net/BedrockClientHandler.cpp src/net/RakNetPacketHandler.cpp src/data/* src/packets/* src/utils/*)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOCKET_HANDLER})
 target_link_libraries(${PROJECT_NAME} zlibstatic yaml-cpp)

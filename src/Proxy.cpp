@@ -10,6 +10,11 @@
 #include "net/WinSockTCP.h"
 #include "net/WinSockUDP.h"
 
+#else
+
+#include <net/UnixSockTCP.h>
+#include <net/UnixSockUDP.h>
+
 #endif
 
 Proxy::Proxy() : javaPacketHandler(this), rakNetPacketHandler(this) {
@@ -48,7 +53,8 @@ Java:
         beSocket = new WinSockUDP(this, host.first.c_str(), host.second);
         beThread = std::thread(&WinSockUDP::start, (WinSockUDP*) beSocket);
 #else
-        //Unix sockets
+        beSocket = new UnixSockUDP(this, host.first.c_str(), host.second);
+        beThread = std::thread(&UnixSockUDP::start, (UnixSockUDP*) beSocket);
 #endif
     }
 
@@ -58,7 +64,7 @@ Java:
         std::ifstream icon("server-icon.png", std::ios::binary);
 
         defaultPing.setName("BiProxy");
-        defaultPing.setProtocolVersion(754);
+        defaultPing.setProtocolVersion(756);
         defaultPing.setOnlinePlayers(0);
         defaultPing.setMaxPlayers(1000);
         defaultPing.setDescription(config["Java"]["MOTD Line 1"].as<std::string>() + '\n' + config["Java"]["MOTD Line 2"].as<std::string>());
@@ -81,7 +87,8 @@ Java:
         jeSocket = new WinSockTCP(this, host.first.c_str(), host.second);
         jeThread = std::thread(&WinSockTCP::start, (WinSockTCP*) jeSocket);
 #else
-        //Unix sockets
+        jeSocket = new UnixSockTCP(this, host.first.c_str(), host.second);
+        jeThread = std::thread(&UnixSockTCP::start, (UnixSockTCP*) jeSocket);
 #endif
 
         if (servers) {
