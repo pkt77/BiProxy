@@ -16,7 +16,11 @@ RSA* serverKey;
 std::vector<BYTE> raw;
 
 void Encryption::init(long long id) {
-    serverKey = RSA_generate_key(1024, 3, NULL, NULL);
+    serverKey = RSA_new();
+    BIGNUM* ex = BN_new();
+
+    BN_set_word(ex, 3);
+    RSA_generate_key_ex(serverKey, 1024, ex, nullptr);
 
     BIO* bio = BIO_new(BIO_s_mem());
 
@@ -33,7 +37,7 @@ void Encryption::init(long long id) {
     raw = base64_decode(based);
     pemBuffer->release();
 
-    _itoa_s(id, hexId, 16);
+    sprintf(hexId, "%02llX", id);
 }
 
 char* Encryption::getHexId() {

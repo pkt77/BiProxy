@@ -181,10 +181,10 @@ bool JavaPacketHandler::handleClient(Connection* from) const {
                     break;
                 }
 
-                web::uri_builder query(L"https://sessionserver.mojang.com/session/minecraft/hasJoined");
+                web::uri_builder query(U("https://sessionserver.mojang.com/session/minecraft/hasJoined"));
 
-                query.append_query(L"username", from->owner->getUsername().c_str());
-                query.append_query(L"serverId", serverHash.c_str());
+                query.append_query(U("username"), from->owner->getUsername().c_str());
+                query.append_query(U("serverId"), serverHash.c_str());
 
                 web::http::client::http_client client(query.to_uri());
                 web::http::client::http_client_config cfg = client.client_config();
@@ -198,8 +198,8 @@ bool JavaPacketHandler::handleClient(Connection* from) const {
 
                 if (response.get().status_code() == 200) {
                     web::json::value data = response.get().extract_json().get();
-                    std::string username = utility::conversions::to_utf8string(data.at(L"name").as_string());
-                    std::string uuid = utility::conversions::to_utf8string(data.at(L"id").as_string());
+                    std::string username = utility::conversions::to_utf8string(data.at(U("name")).as_string());
+                    std::string uuid = utility::conversions::to_utf8string(data.at(U("id")).as_string());
                     //TODO check if logged in
 
                     uuid.insert(8, 1, '-');

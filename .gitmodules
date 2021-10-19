@@ -4,30 +4,6 @@
 [submodule "lib/yaml-cpp"]
 	path = lib/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp
-[submodule "lib/curlpp"]
-	path = lib/curlpp
-	url = https://github.com/jpbarrette/curlpp
 [submodule "lib/cpprestsdk"]
 	path = lib/cpprestsdk
 	url = https://github.com/Microsoft/cpprestsdk
-[submodule "lib/system"]
-	path = lib/system
-	url = https://github.com/boostorg/system
-[submodule "lib/date_time"]
-	path = lib/date_time
-	url = https://github.com/boostorg/date_time
-[submodule "lib/regex"]
-	path = lib/regex
-	url = https://github.com/boostorg/regex
-[submodule "lib/restc-cpp"]
-	path = lib/restc-cpp
-	url = https://github.com/jgaa/restc-cpp
-[submodule "lib/boost"]
-	path = lib/boost
-	url = https://github.com/boostorg/boost
-[submodule "lib/mbedtls"]
-	path = lib/mbedtls
-	url = https://github.com/ARMmbed/mbedtls
-[submodule "lib/openssl"]
-	path = lib/openssl
-	url = https://github.com/openssl/openssl
