@@ -17,5 +17,7 @@ public:
 
     bool handleServer(Connection* from) const;
 
+    void sendToDefaultServer(Connection* from) const;
+
     void disconnect(Connection* from) const;
 };

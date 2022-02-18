@@ -30,7 +30,8 @@ Proxy::Proxy() : javaPacketHandler(this), rakNetPacketHandler(this) {
 
         std::ofstream saveConfig("config.yml");
 
-        saveConfig << R"(Bedrock:
+        saveConfig << R"(Online: false
+Bedrock:
   Host: 0.0.0.0:19132
   MOTD Line 1: BiProxy
   MOTD Line 2: Bedrock Server
@@ -46,6 +47,8 @@ Java:
 
         config = YAML::LoadFile("config.yml");
     }
+
+    online = config["Online"].as<bool>(false);
 
     if (config["Bedrock"] && config["Bedrock"]["Host"]) {
         std::pair<std::string, unsigned short> host = parseHost(config["Bedrock"]["Host"].as<std::string>());

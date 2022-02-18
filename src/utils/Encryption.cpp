@@ -111,10 +111,11 @@ std::string Encryption::decodeMessage(const std::string& secret) {
     return message;
 }
 
-void Encryption::encode(std::string secret, char* buffer, int length) {
+void Encryption::encode(std::string secret, ByteBuffer* buffer) {
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    int length = buffer->getSize();
 
     EVP_CipherInit(ctx, EVP_aes_128_cfb8(), (unsigned char*) secret.data(), (unsigned char*) secret.data(), true);
-    EVP_CipherUpdate(ctx, (unsigned char*) buffer, &length, (unsigned char*) buffer, length);
+    EVP_CipherUpdate(ctx, (unsigned char*) buffer->getBuffer(), &length, (unsigned char*) buffer->getBuffer(), length);
     EVP_CIPHER_CTX_free(ctx);
 }

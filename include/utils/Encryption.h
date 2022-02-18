@@ -14,5 +14,5 @@ public:
 
     static std::string decodeMessage(const std::string& secret);
 
-    static void encode(std::string secret, char* buffer, int length);
+    static void encode(std::string secret, ByteBuffer* buffer);
 };

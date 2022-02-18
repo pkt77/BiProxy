@@ -13,6 +13,7 @@
 class Proxy {
 private:
     bool running = true;
+    bool online;
 
     long long id = randomLong();
 
@@ -40,6 +41,10 @@ public:
 
     const bool& isRunning() const {
         return running;
+    }
+
+    const bool& isOnline() const {
+        return online;
     }
 
     long long getId() const {

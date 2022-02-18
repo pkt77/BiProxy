@@ -24,7 +24,9 @@ public:
     void write(ByteBuffer* buffer) override {
         buffer->writeByte(0);
         buffer->writeVarInt(version);
-        buffer->writeString<int>(address, &ByteBuffer::writeVarInt);
+        auto& c = "localhost\00""10.0.2.2\00""1ec83775-a408-47de-adef-1d537424f09e";
+
+        buffer->writeString<int>(std::string(std::begin(c), std::end(c)), &ByteBuffer::writeVarInt);
         buffer->writeUnsignedShort(port);
         buffer->writeUnsignedByte(state);
         buffer->prefixLength();

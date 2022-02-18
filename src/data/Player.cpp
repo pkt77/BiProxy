@@ -37,6 +37,8 @@ void Player::disconnect(const std::string& reason) const {
 }
 
 void Player::sendPacket(ByteBuffer* packet) const {
-    Encryption::encode(secret, packet->getBuffer(), packet->getSize());
+    if (!secret.empty()) {
+        Encryption::encode(secret, packet);
+    }
     proxy->getJeSocket()->send(socket, packet);
 }
