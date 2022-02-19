@@ -4,6 +4,3 @@
 [submodule "lib/yaml-cpp"]
 	path = lib/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp
-[submodule "lib/cpprestsdk"]
-	path = lib/cpprestsdk
-	url = https://github.com/Microsoft/cpprestsdk

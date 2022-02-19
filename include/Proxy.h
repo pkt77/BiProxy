@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <cstring>
 
 #include <thread>
 #include <net/JavaPacketHandler.h>

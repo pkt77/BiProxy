@@ -32,6 +32,15 @@ I plan to mimic the BungeeCord protocol so there will be no need to write a cust
 
 I also plan to use the same plugin channel messages so server plugins can interact with the proxy without needing additional code.
 
+How To Compile From Source
+-
+### Windows
+- Install [vcpkg](https://vcpkg.io/en/getting-started.html) and [Visual Studio](https://visualstudio.microsoft.com/).
+Unfortunately, those are required to install certain libs, unless someone has a work-around?
+- Run `vcpkg install cpprestsdk cpprestsdk:x64-windows`
+- Run `vcpkg install openssl-windows:x64-windows`
+- Add `-DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake` to your CMake options
+
 Contributions & Resources
 -
 If you'd like to contribute, please format your code similar to Java conventions and this project.

@@ -70,7 +70,7 @@ Java:
         std::ifstream icon("server-icon.png", std::ios::binary);
 
         defaultPing.setName("BiProxy");
-        defaultPing.setProtocolVersion(756);
+        defaultPing.setProtocolVersion(757);
         defaultPing.setOnlinePlayers(0);
         defaultPing.setMaxPlayers(1000);
         defaultPing.setDescription(config["Java"]["MOTD Line 1"].as<std::string>() + '\n' + config["Java"]["MOTD Line 2"].as<std::string>());

@@ -3,15 +3,25 @@
 #include <iostream>
 
 void WinSock::setup(const char* host, unsigned short port, int type, int protocol) {
-    WSAData wsaData;
+    WSAData wsaData{};
 
     if (WSAStartup(WINSOCK_VERSION, &wsaData) != NO_ERROR) {
         return;
     }
 
-    InetPton(AF_INET, host, &addr.sin_addr.s_addr);
-    addr.sin_port = htons(port);
-    addr.sin_family = AF_INET;
+    int err = getaddrinfo(host, nullptr, nullptr, &address);
+
+    if (err != NO_ERROR) {
+        std::cout << "Failed to get address " << host << " code " << err << std::endl;
+        WSACleanup();
+        return;
+    }
+
+    if (address->ai_next != nullptr) {
+        address = address->ai_next;
+    }
+
+    ((sockaddr_in*) address->ai_addr)->sin_port = htons(port);
 
     server = socket(AF_INET, type, protocol);
 
@@ -21,9 +31,9 @@ void WinSock::setup(const char* host, unsigned short port, int type, int protoco
         return;
     }
 
-    if (bind(server, (SOCKADDR*) &addr, sizeof(addr)) == SOCKET_ERROR) {
+    if (bind(server, address->ai_addr, (int) address->ai_addrlen) == SOCKET_ERROR) {
         std::cout << "Socket failed to bind with error " << WSAGetLastError() << std::endl;
-        WSACleanup();
+        stop();
         return;
     }
 
@@ -33,7 +43,7 @@ void WinSock::setup(const char* host, unsigned short port, int type, int protoco
 }
 
 void WinSock::stop() {
-    std::cout << "Killing Winsock " << ntohs(addr.sin_port) << std::endl;
+    std::cout << "Killing Winsock " << ntohs(((sockaddr_in*) address->ai_addr)->sin_port) << std::endl;
     shutdown(server, SD_BOTH);
     WSACleanup();
 }

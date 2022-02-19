@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(BiProxy)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 #Zlib Compression
 add_subdirectory(lib/zlib "${CMAKE_BINARY_DIR}/zlib-build")
@@ -12,9 +12,6 @@ add_subdirectory(lib/yaml-cpp)
 include_directories(lib/yaml-cpp/include)
 
 #REST API
-#vcpkg install cpprestsdk cpprestsdk:x64-windows
-#sudo apt-get install libcpprest-dev
-#cmake params: -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake
 find_package(cpprestsdk CONFIG REQUIRED)
 
 #Encryption

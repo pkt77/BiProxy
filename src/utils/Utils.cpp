@@ -24,6 +24,10 @@ long long currentTimeMillis() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
+long long currentTimeNano() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
 char varIntLength(int value) {
     if ((value & 0xFFFFFF80) == 0) {
         return 1;

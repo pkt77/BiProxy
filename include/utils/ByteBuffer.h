@@ -1,12 +1,7 @@
 #pragma once
 
 #include <string>
-
-#ifdef __linux__
-
 #include <cstring>
-
-#endif
 
 #define BUFFER_SIZE 50
 

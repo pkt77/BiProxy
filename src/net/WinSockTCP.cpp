@@ -23,7 +23,7 @@ void WinSockTCP::start() {
     ByteBuffer* buffer;
 
     while (proxy->isRunning()) {
-        newConnection = accept(server, &clientaddr, &addrlen);
+        newConnection = accept(server, &clientaddr, (int*) &address->ai_addrlen);
 
         if (newConnection != INVALID_SOCKET) {
             connections.push_back(new Connection{reinterpret_cast<void*>(newConnection), ByteBuffer::allocateBuffer(1024), false, 0, nullptr});
@@ -102,22 +102,29 @@ bool WinSockTCP::send(const void* address, const char payload[], unsigned int si
 }
 
 bool WinSockTCP::createSocket(Player* player, Server* target) {
-    addrinfo hints;
-    addrinfo* result;
+    addrinfo* host;
+    int addrError = getaddrinfo(target->getHost().c_str(), nullptr, nullptr, &host);
 
-    ZeroMemory(&hints, sizeof(hints));
+    if (addrError != NO_ERROR) {
+        std::cout << "Failed to find host " << target->getHost() << ' ' << addrError << std::endl;
+        return false;
+    }
 
-    SOCKET sock = socket(hints.ai_family = AF_UNSPEC, hints.ai_socktype = SOCK_STREAM, hints.ai_protocol = IPPROTO_TCP);
-    int addrError = getaddrinfo(target->getHost().c_str(), std::to_string(target->getPort()).c_str(), &hints, &result);
-    int connectError = connect(sock, result->ai_addr, result->ai_addrlen);
+    if (host->ai_next != nullptr) {
+        host = host->ai_next;
+    }
 
-    if (addrError == NO_ERROR && connectError == NO_ERROR) {
+    ((sockaddr_in*) host->ai_addr)->sin_port = htons(target->getPort());
+
+    SOCKET sock = socket(host->ai_family, host->ai_socktype, host->ai_protocol);
+
+    if (connect(sock, host->ai_addr, (int) host->ai_addrlen) == NO_ERROR) {
         player->connectingSocket = reinterpret_cast<void*>(sock);
         connections.push_back(new Connection{player->connectingSocket, ByteBuffer::allocateBuffer(250000), false, 2, player});
         std::cout << "Connected to server" << std::endl;
         return true;
     }
 
-    std::cout << "Failed connection " << addrError << ' ' << connectError << std::endl;
+    std::cout << "Failed connection " << WSAGetLastError() << std::endl;
     return false;
 }

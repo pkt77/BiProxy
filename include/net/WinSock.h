@@ -1,7 +1,7 @@
 #pragma once
 
 #include <WinSock2.h>
-#include <Ws2tcpip.h>
+#include <WS2tcpip.h>
 
 #include <string>
 #include "Proxy.h"
@@ -10,8 +10,7 @@ class WinSock : public AbstractSocket {
 protected:
     Proxy* proxy;
 
-    SOCKADDR_IN addr;
-    int addrlen = sizeof(addr);
+    addrinfo* address;
 
     SOCKET server;
 

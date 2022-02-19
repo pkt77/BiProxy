@@ -26,7 +26,7 @@ void WinSockUDP::start() {
 }
 
 bool WinSockUDP::send(const void* address, const char* payload, unsigned int size) {
-    return sendto(server, payload, size, 0, (SOCKADDR*) address, addrlen) != SOCKET_ERROR;
+    return sendto(server, payload, (int) size, 0, (SOCKADDR*) address, (int) this->address->ai_addrlen) != SOCKET_ERROR;
 }
 
 bool WinSockUDP::createSocket(Player* player, Server* target) {
