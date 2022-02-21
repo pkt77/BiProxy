@@ -18,16 +18,16 @@ int main(int argc, char** argv) {
         }
     }*/
 
-    Proxy proxy;
+    Proxy* proxy = Proxy::instance();
 
-    while (proxy.isRunning()) {
+    while (proxy->isRunning()) {
         char cmdBuffer[1024];
 
         std::cin >> cmdBuffer;
 
         if (strncmp(cmdBuffer, "end", 3) == 0) {
             std::cout << "Shutting down..." << std::endl;
-            proxy.shutdown();
+            proxy->shutdown();
         }
     }
 }

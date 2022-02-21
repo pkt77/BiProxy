@@ -4,6 +4,9 @@
 #include <list>
 #include <future>
 
+#include "net/protocol/Handshake.h"
+#include "net/protocol/ServerLogin.h"
+
 std::list<Connection*> connections;
 
 WinSockTCP::WinSockTCP(Proxy* proxy, const char* host, unsigned short port) : WinSock(proxy) {
@@ -26,7 +29,8 @@ void WinSockTCP::start() {
         newConnection = accept(server, &clientaddr, (int*) &address->ai_addrlen);
 
         if (newConnection != INVALID_SOCKET) {
-            connections.push_back(new Connection{reinterpret_cast<void*>(newConnection), ByteBuffer::allocateBuffer(1024), false, 0, nullptr});
+            connections.push_back(new Connection{reinterpret_cast<void*>(newConnection), Handshake::protocol(), ByteBuffer::allocateBuffer(1024),
+                                                 false, STATE_HANDSHAKE, nullptr});
         }
 
         auto iter = connections.begin();
@@ -120,7 +124,8 @@ bool WinSockTCP::createSocket(Player* player, Server* target) {
 
     if (connect(sock, host->ai_addr, (int) host->ai_addrlen) == NO_ERROR) {
         player->connectingSocket = reinterpret_cast<void*>(sock);
-        connections.push_back(new Connection{player->connectingSocket, ByteBuffer::allocateBuffer(250000), false, 2, player});
+        connections.push_back(new Connection{player->connectingSocket, ServerLogin::protocol(), ByteBuffer::allocateBuffer(250000),
+                                             false, STATE_LOGIN, player});
         std::cout << "Connected to server" << std::endl;
         return true;
     }

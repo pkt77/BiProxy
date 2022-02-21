@@ -29,7 +29,7 @@ if (UNIX)
     set(SOCKET_HANDLER src/net/UnixSock.cpp src/net/UnixSockTCP.cpp src/net/UnixSockUDP.cpp)
 endif (UNIX)
 
-file(GLOB SOURCE_FILES src/* src/net/JavaPacketHandler.cpp src/net/BedrockClientHandler.cpp src/net/RakNetPacketHandler.cpp src/data/* src/packets/* src/utils/*)
+file(GLOB SOURCE_FILES src/* src/net/JavaPacketHandler.cpp src/net/BedrockClientHandler.cpp src/net/RakNetPacketHandler.cpp src/net/protocol/* src/data/* src/packets/* src/utils/*)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOCKET_HANDLER})
 target_link_libraries(${PROJECT_NAME} PRIVATE cpprestsdk::cpprest zlibstatic yaml-cpp OpenSSL::SSL OpenSSL::Crypto)

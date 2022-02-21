@@ -1,6 +1,6 @@
 #pragma once
 
-#include <data/Player.h>
+#include <net/protocol/Protocol.h>
 
 class Proxy;
 
@@ -13,11 +13,9 @@ public:
 
     void handle(Connection* from) const;
 
-    bool handleClient(Connection* from) const;
+    static bool packetConsumed(Connection* from);
 
-    bool handleServer(Connection* from) const;
+    static void sendToDefaultServer(Connection* from);
 
-    void sendToDefaultServer(Connection* from) const;
-
-    void disconnect(Connection* from) const;
+    static void disconnect(Connection* from) ;
 };

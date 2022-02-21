@@ -70,4 +70,9 @@ public:
     JavaPing& getDefaultPing() {
         return defaultPing;
     }
+
+    static Proxy* instance() {
+        static Proxy proxy;
+        return &proxy;
+    }
 };

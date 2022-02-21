@@ -52,7 +52,6 @@ public:
         Player::uuid = uuid;
     }
 
-
     const std::string& getSecret() const {
         return secret;
     }
@@ -81,11 +80,3 @@ struct JUUID {
 
     LOGIN
 };*/
-
-struct Connection {
-    void* socket;
-    ByteBuffer* buffer;
-    bool processing;
-    unsigned char state;
-    Player* owner;
-};

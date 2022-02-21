@@ -1,25 +1,11 @@
 #include <net/JavaPacketHandler.h>
 
 #include "Proxy.h"
+#include "net/protocol/ClientLogin.h"
 #include <utils/Base64.h>
 
 #include <iostream>
 #include <utils/Encryption.h>
-
-#include <cpprest/http_client.h>
-
-//Connect States
-#define STATE_HANDSHAKE 0
-#define STATE_STATUS 1
-#define STATE_LOGIN 2
-
-//Client Packet IDs
-#define HANDSHAKE 0
-#define STATUS 0
-#define PING 1
-
-//Server Packet IDs
-#define ENCRYPTION_REQUEST 1
 
 void JavaPacketHandler::handle(Connection* from) const {
     ByteBuffer* buffer = from->buffer;
@@ -60,13 +46,13 @@ void JavaPacketHandler::handle(Connection* from) const {
         bytes = offset - startOffset;
 
         if (fromClient) {
-            if (!handleClient(from) && from->owner != nullptr && from->owner->connectingSocket != nullptr) {
+            if (!packetConsumed(from) && from->owner != nullptr && from->owner->connectingSocket != nullptr) {
                 if (!proxy->getJeSocket()->send(from->owner->connectingSocket, buffer->getBuffer() + startOffset, bytes + length)) {
                     break;
                 }
             }
         } else {
-            if (!handleServer(from)) {
+            if (!packetConsumed(from)) {
                 if (!from->owner->getSecret().empty()) {
                     //Encryption::encode(from->owner->getSecret(), buffer->getBuffer() + startOffset, bytes + length);
                 }
@@ -89,215 +75,17 @@ void JavaPacketHandler::handle(Connection* from) const {
     from->processing = false;
 }
 
-bool JavaPacketHandler::handleClient(Connection* from) const {
+bool JavaPacketHandler::packetConsumed(Connection* from) {
     ByteBuffer* buffer = from->buffer;
+    unsigned char id = buffer->readUnsignedByte();
+    PacketHandler handler = from->protocol->getHandler(id);
 
-    if (from->state == STATE_HANDSHAKE) {
-        if (buffer->readUnsignedByte() != HANDSHAKE) {
-            //Close connection
-            return true;
-        }
-
-        HandshakePacket hand;
-
-        hand.read(buffer);
-
-        std::cout << hand.getVersion() << '-' << hand.getAddress() << ':' << hand.getPort() << '+' << +hand.getState() << std::endl;
-
-        if ((from->state = hand.getState()) == 2) {
-            from->owner = new Player(proxy, from->socket);
-            from->owner->handshakePacket = hand;
-        }
-        return true;
-    }
-
-    switch (buffer->readUnsignedByte()) {
-        case HANDSHAKE: {
-            if (from->state == STATE_STATUS) {
-                std::string motdJson = proxy->getDefaultPing().toJSON();
-                ByteBuffer* motd = ByteBuffer::allocateBuffer(motdJson.length() + 5);
-
-                motd->writeByte(STATUS);
-                motd->writeString<int>(motdJson, &ByteBuffer::writeVarInt);
-                motd->prefixLength();
-
-                proxy->getJeSocket()->send(from->socket, motd);
-                motd->release();
-                return true;
-            }
-
-            // else state should be login
-
-            from->owner->setUsername(buffer->readString<int>(&ByteBuffer::readVarInt));
-            std::cout << from->owner->getUsername() << " connecting..." << std::endl;
-
-            if (!proxy->isOnline()) {
-                sendToDefaultServer(from);
-                break;
-            }
-
-            ByteBuffer* encr = ByteBuffer::allocateBuffer(1100);
-            int token = randomInt();
-
-            from->owner->setToken(token);
-
-            encr->writeByte(ENCRYPTION_REQUEST);
-            encr->writeString<int>(Encryption::getHexId(), &ByteBuffer::writeVarInt);
-
-            Encryption::addKey(encr);
-
-            encr->writeVarInt(4);
-            encr->writeInt(token);
-            encr->prefixLength();
-
-            proxy->getJeSocket()->send(from->socket, encr);
-            encr->release();
-            break;
-        }
-
-        case PING: {
-            if (from->state == STATE_STATUS) {
-                ByteBuffer* pong = ByteBuffer::allocateBuffer(10);
-                long long time = buffer->readLong();
-
-                pong->writeVarInt(9);
-                pong->writeByte(PING);
-                pong->writeLong(time);
-
-                if (from->owner == nullptr) {
-                    proxy->getJeSocket()->send(from->socket, pong);
-                } else {
-                    proxy->getJeSocket()->send(from->owner->connectingSocket, pong);
-                }
-
-                pong->release();
-            } else if (from->state == STATE_LOGIN) {
-                std::string secret = buffer->readString<int>(&ByteBuffer::readVarInt);
-                std::string verifyToken = buffer->readString<int>(&ByteBuffer::readVarInt);
-
-                secret = Encryption::decodeMessage(secret);
-                std::string serverHash = Encryption::genServerHash(secret);
-                std::string tokenBytes = Encryption::decodeMessage(verifyToken);
-
-                //TODO better way to do this
-                buffer->setOffset(buffer->getOffset() - 4);
-                buffer->writeBytes(tokenBytes.data(), tokenBytes.length());
-                buffer->setSize(buffer->getSize() - 4);
-                buffer->setOffset(buffer->getOffset() - 4);
-
-                if (from->owner->getToken() != buffer->readInt()) {
-                    std::string msg = "Invalid Token!";
-                    from->owner->disconnect(msg);
-                    break;
-                }
-
-                web::uri_builder query(U("https://sessionserver.mojang.com/session/minecraft/hasJoined"));
-
-                query.append_query(U("username"), from->owner->getUsername().c_str());
-                query.append_query(U("serverId"), serverHash.c_str());
-
-                web::http::client::http_client client(query.to_uri());
-                web::http::client::http_client_config cfg = client.client_config();
-
-                cfg.set_timeout(std::chrono::seconds(5));
-
-                pplx::task<web::http::http_response> response = client.request(web::http::methods::GET);
-
-                response.wait();
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-                if (response.get().status_code() != 200) {
-                    std::string msg = "Failed to verify with Mojang";
-                    from->owner->disconnect(msg);
-                    break;
-                }
-
-                web::json::value data = response.get().extract_json().get();
-                std::string username = utility::conversions::to_utf8string(data.at(U("name")).as_string());
-                std::string uuid = utility::conversions::to_utf8string(data.at(U("id")).as_string());
-
-                uuid.insert(8, 1, '-');
-                uuid.insert(13, 1, '-');
-                uuid.insert(18, 1, '-');
-                uuid.insert(23, 1, '-');
-
-                if (username != from->owner->getUsername()) {
-                    std::string msg = "Invalid Login! Please Restart.";
-                    from->owner->disconnect(msg);
-                    break;
-                }
-
-                from->owner->setUUID(uuid);
-                std::cout << "Verified " << username << " (" << uuid << ")" << std::endl;
-                from->owner->handshakePacket.getAddress().append(1, '\00').append("localhost").append(1, '\00').append(uuid);
-
-                ByteBuffer* loginPack = ByteBuffer::allocateBuffer(100);
-
-                loginPack->writeLong(2218083794882676702);
-                loginPack->writeLong(-5913475541446102882);
-                loginPack->writeString<int>(username, &ByteBuffer::writeVarInt);
-                loginPack->prefixLength();
-                from->owner->setSecret(secret);
-                from->owner->sendPacket(loginPack);
-
-                sendToDefaultServer(from);
-            }
-            break;
-        }
-
-/*        case 3: {
-            CompressionPacket comp;
-
-            comp.read(buffer);
-
-            std::cout << comp.getThreshold() << std::endl;
-            break;
-        }*/
-
-        default:
-            std::cout << "Unknown packet id" << std::endl;
-            return false;
-    }
-    return true;
+    return handler != nullptr && handler(from);
 }
 
-bool JavaPacketHandler::handleServer(Connection* from) const {
-    ByteBuffer* buffer = from->buffer;
-
-    switch (buffer->readUnsignedByte()) {
-        /*     case 0:
-                 std::cout << buffer->readString() << std::endl;
-                 break;*/
-
-        case 0x02:
-            std::cout << "Got Login " << buffer->readLong() << ' ' << buffer->readLong() << ' ' << buffer->readString(&ByteBuffer::readVarInt) << std::endl;
-            return true;
-
-        case 0x24: {
-            // std::ofstream out("data.nbt", std::ios::binary);
-
-            //out.write(buffer->getBuffer() + buffer->getOffset(), length - 1);
-            break;
-        }
-
-        case 0x17: {
-            std::cout << buffer->readString<int>(&ByteBuffer::readVarInt) << std::endl;
-            break;
-        }
-
-        case 0x19:
-            std::cout << buffer->readString<int>(&ByteBuffer::readVarInt) << std::endl;
-            break;
-
-        default:
-            return false;
-    }
-    return false; // Temporary
-}
-
-void JavaPacketHandler::sendToDefaultServer(Connection* from) const {
+void JavaPacketHandler::sendToDefaultServer(Connection* from) {
     std::string server = "hub";
-    Server* hub = proxy->getServer(server);
+    Server* hub = Proxy::instance()->getServer(server);
 
     if (hub == nullptr) {
         std::string msg = "No default server";
@@ -308,7 +96,7 @@ void JavaPacketHandler::sendToDefaultServer(Connection* from) const {
     }
 }
 
-void JavaPacketHandler::disconnect(Connection* from) const {
+void JavaPacketHandler::disconnect(Connection* from) {
     if (from->owner == nullptr || from->socket == from->owner->getSocket()) {
         if (from->owner != nullptr) {
             std::cout << from->owner->getUsername() << " Disconnected" << std::endl;
